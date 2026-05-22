@@ -1,0 +1,58 @@
+    def _execute_marker(self, node: dict):
+        click_x = int(node.get("x", 0))
+        click_y = int(node.get("y", 0))
+        if read_click_randomness(node, True):
+            click_x += random.randint(-4, 4)
+            click_y += random.randint(-4, 4)
+        hold_time = max(0, int(node.get("mouse_hold_ms", 100))) / 1000.0
+        move_duration_ms = max(0, int(node.get("click_delay_ms", 100)))
+        mouse_button = node.get("mouse_button", "left")
+        if self._use_native_motion(node):
+            try:
+                self._clear_cursor_lock()
+                self.click_started.emit(click_x, click_y)
+                moved = self._native_move_cursor(click_x, click_y, move_duration_ms)
+                if not moved or not self._running:
+                    self.status_changed.emit(f"Stopped {node.get('name', 'Marker')}")
+                    return
+                self._lock_cursor_at(click_x, click_y)
+                down_ok = self._native_mouse_down(mouse_button)
+                if not down_ok:
+                    raise RuntimeError("native mouse down failed")
+                if hold_time > 0:
+                    self._sleep_until(time.perf_counter() + hold_time)
+                up_ok = self._native_mouse_up(mouse_button)
+                if not up_ok:
+                    raise RuntimeError("native mouse up failed")
+                self.click_finished.emit(click_x, click_y)
+                self.status_changed.emit(f"Executed {node.get('name', 'Marker')}")
+                self._sleep_until(time.perf_counter() + (max(1, move_duration_ms) / 1000.0))
+                return
+            except Exception:
+                try:
+                    self._native_mouse_up(mouse_button)
+                except Exception:
+                    pass
+                self.status_changed.emit(f"Failed {node.get('name', 'Marker')}")
+                return
+        if bool(node.get("teleport_mouse", False)):
+            try:
+                self.click_started.emit(click_x, click_y)
+                self._teleport_cursor(click_x, click_y)
+                self._lock_cursor_at(click_x, click_y)
+                pyautogui.mouseDown(button=mouse_button)
+                if hold_time > 0:
+                    self._sleep_until(time.perf_counter() + hold_time)
+                pyautogui.mouseUp(button=mouse_button)
+                self.click_finished.emit(click_x, click_y)
+                ok = self._running
+            except Exception:
+                try:
+                    pyautogui.mouseUp(button=mouse_button)
+                except Exception:
+                    pass
+                ok = False
+        else:
+            ok = self._post_click(click_x, click_y, hold_time, mouse_button)
+        self.status_changed.emit(f"Executed {node.get('name', 'Marker')}" if ok else f"Failed {node.get('name', 'Marker')}")
+        self._sleep_until(time.perf_counter() + (max(1, int(node.get("click_delay_ms", 100))) / 1000.0))

@@ -1,0 +1,553 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "last_updated": "2026-04-30",
+    "project": "SnapCursorX (Starter Edition)",
+    "description": "Comprehensive style guide for colors, fonts, and sizing",
+    "base_scale": 1.0,
+    "note": "All font sizes are base sizes. Multiply by scale factor for theme adjustments."
+  },
+  "window_sizes": {
+    "windows": {
+      "loading_screen": {
+        "width": 660,
+        "height": 380,
+        "description": "Loading/Splash screen",
+        "file": "App/Loading.py"
+      },
+      "single_mode": {
+        "width": 480,
+        "height": 220,
+        "description": "Single click mode main window",
+        "file": "App/Modes/single/logic.py"
+      },
+      "sandbox_mode": {
+        "width": 720,
+        "height": 430,
+        "description": "Sandbox mode main window",
+        "file": "App/Modes/sandbox/logic.py"
+      },
+      "sandbox_ui_widget": {
+        "width": 330,
+        "height": 330,
+        "description": "Sandbox UI editor widget",
+        "file": "App/Modes/sandbox/ui.py"
+      },
+      "main_dialog": {
+        "width": 320,
+        "height": 170,
+        "description": "Main window (generic)",
+        "file": "App/UI/main_window.py"
+      }
+    },
+    "dialogs": {
+      "single_dialog_1": {
+        "width": 260,
+        "height": 120,
+        "description": "Single mode configuration dialog",
+        "file": "App/Modes/single/ui.py"
+      },
+      "single_dialog_2": {
+        "width": 500,
+        "height": 280,
+        "description": "Single mode info/settings dialog",
+        "file": "App/Modes/single/ui.py"
+      },
+      "popup_menu": {
+        "width": 580,
+        "height": 360,
+        "description": "Popup/context menu dialog",
+        "file": "App/UI/components/popup.py"
+      }
+    },
+    "components": {
+      "titlebar": {
+        "height": 40,
+        "width": "auto",
+        "description": "Top title bar",
+        "file": "App/UI/components/titlebar.py"
+      },
+      "logo_titlebar": {
+        "width": 40,
+        "height": 40,
+        "description": "Logo in title bar",
+        "file": "App/UI/components/titlebar.py"
+      },
+      "title_buttons": {
+        "width": 30,
+        "height": 30,
+        "description": "Minimize/maximize buttons in title bar",
+        "file": "App/UI/components/titlebar.py"
+      },
+      "close_button_titlebar": {
+        "width": 60,
+        "height": 30,
+        "description": "Close button in title bar",
+        "file": "App/UI/components/titlebar.py"
+      },
+      "popup_button": {
+        "height": 18,
+        "width": "auto",
+        "description": "Popup menu button",
+        "file": "App/UI/components/popup.py"
+      },
+      "popup_fixed_width": {
+        "width": 110,
+        "height": "auto",
+        "description": "Popup menu fixed width",
+        "file": "App/UI/components/popup.py"
+      },
+      "info_button": {
+        "width": 27,
+        "height": 27,
+        "description": "Info button (sandbox)",
+        "file": "App/Modes/sandbox/ui.py"
+      },
+      "add_button": {
+        "width": 18,
+        "height": 18,
+        "description": "Add/small button (sandbox)",
+        "file": "App/Modes/sandbox/ui.py"
+      },
+      "close_button": {
+        "width": 72,
+        "height": 24,
+        "description": "Close button (single mode)",
+        "file": "App/Modes/single/ui.py"
+      },
+      "dialog_button": {
+        "width": 64,
+        "height": 24,
+        "description": "Standard dialog button",
+        "file": "App/Modes/single/ui.py"
+      },
+      "logo_label": {
+        "width": 110,
+        "height": 110,
+        "description": "Logo label in loading screen",
+        "file": "App/Loading.py"
+      },
+      "log_view": {
+        "height": 100,
+        "width": "auto",
+        "description": "Log viewer height (loading)",
+        "file": "App/Loading.py"
+      },
+      "progress_bar": {
+        "height": 14,
+        "width": "auto",
+        "description": "Progress bar height (loading)",
+        "file": "App/Loading.py"
+      },
+      "marker_widget": {
+        "width": 44,
+        "height": 44,
+        "description": "Default marker widget size",
+        "file": "App/UI/overlay/marker.py"
+      },
+      "overlay": {
+        "width": "screen",
+        "height": "screen",
+        "description": "Overlay spans entire primary screen",
+        "file": "App/UI/overlay/overlay.py"
+      }
+    }
+  },
+  "colors": {
+    "primary_accents": {
+      "purple_main": "#7a00ff",
+      "purple_light": "#a64dff",
+      "purple_hover": "#8a1fff",
+      "purple_secondary": "#6200cc",
+      "purple_hover_variant": "#9a2bff",
+      "purple_gradient_dark": "#400071"
+    },
+    "backgrounds": {
+      "gradient_start": "#0f0c29",
+      "gradient_mid": "#400071",
+      "gradient_end": "#24243e",
+      "error_accent": "#ff4b4b"
+    },
+    "text": {
+      "primary": "rgba(255,255,255,220)",
+      "secondary": "rgba(255,255,255,210)",
+      "tertiary": "rgba(255,255,255,200)",
+      "dimmed": "rgba(255,255,255,180)",
+      "muted": "rgba(255,255,255,150)",
+      "subtle": "rgba(255,255,255,135)",
+      "placeholder": "rgba(255,255,255,110)",
+      "monospace": "rgba(255,255,255,205)"
+    },
+    "borders": {
+      "standard": "rgba(255,255,255,90)",
+      "light": "rgba(255,255,255,80)",
+      "subtle": "rgba(255,255,255,60)",
+      "minimal": "rgba(255,255,255,40)",
+      "divider": "rgba(255,255,255,35)",
+      "very_light": "rgba(255,255,255,30)",
+      "faint": "rgba(255,255,255,28)"
+    },
+    "backgrounds_dark": {
+      "overlay_heavy": "rgba(0,0,0,128)",
+      "input": "rgba(0,0,0,120)",
+      "standard": "rgba(0,0,0,100)",
+      "field": "rgba(0,0,0,92)",
+      "dropdown": "rgba(0,0,0,90)",
+      "progress_bar_bg": "rgba(0,0,0,75)",
+      "light_dark": "rgba(0,0,0,45)",
+      "dropdown_deep": "rgba(18,10,40,235)",
+      "dialog": "rgba(7,10,22,238)",
+      "dialog_variant": "rgba(8,10,24,220)"
+    },
+    "interactive": {
+      "button_hover": "rgba(255,255,255,60)",
+      "menu_item_hover": "rgba(255,255,255,50)",
+      "button_hover_secondary": "rgba(255,255,255,28)",
+      "spinbox_up_down": "rgba(255,255,255,20)",
+      "button_light": "rgba(255,255,255,16)",
+      "button_minimal": "rgba(255,255,255,15)",
+      "button_add": "rgba(255,255,255,14)",
+      "disabled_button": "rgba(255,255,255,10)"
+    },
+    "semantic": {
+      "warning": "rgba(255,216,77,210)",
+      "error": "#ff4d4d",
+      "error_border": "rgba(255,120,120,90)",
+      "success": "rgba(80,170,90,150)",
+      "active_border_green": "rgba(130,255,160,120)",
+      "disabled_purple": "rgba(80,0,140,70)"
+    },
+    "buttons": {
+      "stop_background": "rgba(160,25,25,180)",
+      "stop_hover": "rgba(210,40,40,210)",
+      "stop_disabled": "rgba(80,10,10,70)"
+    },
+    "markers": {
+      "fill": "rgba(255,60,60,255)",
+      "endpoint": "rgba(255,140,60,255)",
+      "ring": "rgba(255,230,120,255)",
+      "active_ring": "rgba(80,220,120,255)",
+      "active_node_bg": "rgba(70,170,90,150)"
+    },
+    "selection": {
+      "background": "rgba(122,0,255,150)"
+    }
+  },
+  "fonts": {
+    "families": {
+      "primary": "Times New Roman",
+      "monospace": "Consolas"
+    },
+    "sizes": {
+      "titles": {
+        "main_title": 28,
+        "dialog_title_large": 16,
+        "dialog_title": 13,
+        "summary_title": 15,
+        "section_header": 14
+      },
+      "headings": {
+        "version_label": 14,
+        "credit_title": 14,
+        "setup_title": 14,
+        "subtitle": 13
+      },
+      "body": {
+        "standard": 10,
+        "description": 11,
+        "info_text": 10,
+        "contact": 12,
+        "dialog_info": 11
+      },
+      "small": {
+        "label": 9,
+        "small_label": 9,
+        "tagline": 10,
+        "copyright": 7.8,
+        "copyright_small": 6.9,
+        "tagline_small": 8.9
+      },
+      "tiny": {
+        "hint": 7,
+        "status": 7.4,
+        "help": 7.5,
+        "small_info": 6.5,
+        "tagline_tiny": 6.4
+      },
+      "monospace": {
+        "code": 9,
+        "keybind": 8,
+        "summary": 8.5,
+        "log": 9
+      }
+    },
+    "weights": {
+      "normal": 400,
+      "bold": 700
+    }
+  },
+  "gradients": {
+    "main_background": {
+      "type": "linear",
+      "direction": "diagonal",
+      "x1": 0,
+      "y1": 0,
+      "x2": 1,
+      "y2": 1,
+      "stops": [
+        {
+          "position": 0,
+          "color": "#0f0c29"
+        },
+        {
+          "position": 0.45,
+          "color": "#400071"
+        },
+        {
+          "position": 1,
+          "color": "#24243e"
+        }
+      ]
+    },
+    "progress_bar": {
+      "type": "linear",
+      "stops": [
+        {
+          "position": 0,
+          "color": "#ff4b4b"
+        },
+        {
+          "position": 0.5,
+          "color": "#b03dff"
+        },
+        {
+          "position": 1,
+          "color": "#5f8dff"
+        }
+      ]
+    },
+    "marker": {
+      "type": "qlinear_gradient",
+      "stops": [
+        {
+          "color": "rgb(255, 60, 60)",
+          "alpha": 235
+        },
+        {
+          "color": "rgb(255, 120, 60)",
+          "alpha": 170
+        },
+        {
+          "color": "rgb(255, 140, 60)",
+          "alpha": 55
+        }
+      ]
+    }
+  },
+  "components": {
+    "dialog": {
+      "background": "qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #0f0c29, stop:0.45 #400071, stop:1 #24243e)",
+      "border": "1px solid rgba(255,255,255,35)",
+      "border_radius": 8,
+      "text_color": "white"
+    },
+    "input_field": {
+      "color": "white",
+      "background": "rgba(0,0,0,90)",
+      "border": "1px solid rgba(255,255,255,42)",
+      "border_radius": 4,
+      "padding": "5px",
+      "font_size": 8,
+      "font_family": "Times New Roman"
+    },
+    "spinbox": {
+      "color": "white",
+      "background": "rgba(0,0,0,100)",
+      "border": "1px solid rgba(255,255,255,55)",
+      "border_radius": 3,
+      "font_size": 8,
+      "font_family": "Times New Roman",
+      "padding": "2px 4px",
+      "up_down_button_bg": "rgba(255,255,255,20)"
+    },
+    "combobox": {
+      "color": "white",
+      "background": "rgba(0,0,0,92)",
+      "border": "1px solid rgba(255,255,255,42)",
+      "border_radius": 4,
+      "font_size": 8,
+      "font_family": "Times New Roman",
+      "padding": "3px 22px 3px 6px",
+      "dropdown": {
+        "background": "rgba(18,10,40,235)",
+        "border": "1px solid rgba(255,255,255,40)"
+      },
+      "selection_background": "rgba(122,0,255,150)"
+    },
+    "checkbox": {
+      "color_text": "rgba(255,255,255,210)",
+      "color_empty": "rgba(255,255,255,0)",
+      "indicator_size": 14,
+      "indicator_border": "1px solid rgba(255,255,255,90)",
+      "indicator_background": "rgba(0,0,0,100)",
+      "indicator_checked_bg": "#7a00ff",
+      "indicator_checked_border": "1px solid #a64dff",
+      "border_radius": 3,
+      "font_size": 8,
+      "font_family": "Times New Roman",
+      "spacing": 6
+    },
+    "button_primary": {
+      "background": "#6200cc",
+      "background_hover": "#8a1fff",
+      "background_disabled": "rgba(80,0,140,70)",
+      "color": "white",
+      "color_disabled": "rgba(255,255,255,55)",
+      "border_radius": 6,
+      "padding": "4px 14px",
+      "font_size": 8,
+      "font_family": "Times New Roman"
+    },
+    "button_secondary": {
+      "background": "rgba(255,255,255,16)",
+      "background_hover": "rgba(255,255,255,28)",
+      "color": "white",
+      "color_disabled": "rgba(255,255,255,70)",
+      "border": "1px solid rgba(255,255,255,40)",
+      "border_disabled": "rgba(255,255,255,18)",
+      "border_radius": 4,
+      "padding": "3px 8px",
+      "font_size": 8,
+      "font_family": "Times New Roman"
+    },
+    "button_stop": {
+      "background": "rgba(160,25,25,180)",
+      "background_hover": "rgba(210,40,40,210)",
+      "background_disabled": "rgba(80,10,10,70)",
+      "color": "white",
+      "border_radius": 6,
+      "padding": "4px 14px",
+      "font_size": 8,
+      "font_family": "Times New Roman"
+    },
+    "button_info": {
+      "background": "rgba(255,255,255,22)",
+      "background_hover": "rgba(255,255,255,36)",
+      "color": "white",
+      "border": "1px solid rgba(255,255,255,45)",
+      "border_radius": 6,
+      "font_size": 11,
+      "font_family": "Times New Roman",
+      "font_weight": "bold"
+    },
+    "button_add": {
+      "background": "rgba(255,255,255,14)",
+      "background_hover": "rgba(255,255,255,28)",
+      "color": "white",
+      "border": "1px solid rgba(255,255,255,36)",
+      "border_radius": 4,
+      "font_size": 9,
+      "font_family": "Consolas",
+      "font_weight": "bold"
+    },
+    "progress_bar": {
+      "background": "rgba(0,0,0,75)",
+      "border": "1px solid rgba(255,255,255,60)",
+      "border_error": "1px solid rgba(255,120,120,90)",
+      "fill_gradient": "qlineargradient(stop:0 #ff4b4b, stop:0.5 #b03dff, stop:1 #5f8dff)",
+      "fill_error": "#ff4b4b"
+    },
+    "log_viewer": {
+      "font_size": 9,
+      "font_family": "Consolas",
+      "color": "rgba(255,255,255,210)",
+      "background": "rgba(0,0,0,90)",
+      "border": "1px solid rgba(255,255,255,32)"
+    },
+    "separator": {
+      "horizontal_color": "rgba(255,255,255,25)",
+      "vertical_color": "rgba(255,255,255,30)"
+    },
+    "splitter_handle": {
+      "background": "rgba(0,0,0,45)",
+      "border": "1px solid rgba(255,255,255,32)",
+      "border_radius": 6,
+      "color": "rgba(255,255,255,180)",
+      "font_size": 9,
+      "font_family": "Consolas",
+      "font_weight": "bold"
+    },
+    "card": {
+      "background": "rgba(255,255,255,10)",
+      "border": "1px solid rgba(255,255,255,24)",
+      "border_radius": 8,
+      "text_color": "white"
+    },
+    "marker": {
+      "hitbox_color": "rgb(255, 0, 0)",
+      "hitbox_alpha": 60,
+      "hitbox_alpha_executing": 25,
+      "ring_width": 3,
+      "ring_width_executing": 2,
+      "core_size": 8,
+      "core_size_executing": 6,
+      "core_color": "rgb(255, 0, 0)",
+      "margin": 2
+    }
+  },
+  "spacing": {
+    "dialog": {
+      "margin_horizontal": 14,
+      "margin_vertical": 12
+    },
+    "buttons": {
+      "padding_standard": "4px 14px",
+      "padding_compact": "3px 8px"
+    },
+    "inputs": {
+      "padding": "3px 5px",
+      "padding_standard": "5px"
+    }
+  },
+  "opacity_levels": {
+    "fully_opaque": 255,
+    "very_high": [230, 235],
+    "high": [210, 220],
+    "medium_high": [180, 205],
+    "medium": [140, 170],
+    "medium_low": [100, 135],
+    "low": [50, 90],
+    "very_low": [18, 40],
+    "minimal": [9, 15],
+    "none": 0
+  },
+  "border_radius": {
+    "large_dialogs": 8,
+    "input_fields": 4,
+    "buttons_primary": 6,
+    "buttons_secondary": 4,
+    "indicators": 3,
+    "cards": 8,
+    "splitter": 6
+  },
+  "theme_presets": {
+    "dark": {
+      "name": "Dark Theme (Default)",
+      "background_gradient": "qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #0f0c29, stop:0.45 #400071, stop:1 #24243e)",
+      "primary_accent": "#7a00ff",
+      "text_color": "rgba(255,255,255,220)",
+      "scale_factor": 1.0
+    }
+  },
+  "scaling_notes": {
+    "base_font_size": 8,
+    "scale_multiplier_examples": {
+      "small": 0.85,
+      "normal": 1.0,
+      "medium": 1.15,
+      "large": 1.3,
+      "extra_large": 1.5
+    },
+    "how_to_use": "Multiply all font size values by the scale_factor to adjust for different screen sizes or accessibility needs"
+  }
+}

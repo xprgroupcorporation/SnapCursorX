@@ -1,0 +1,33 @@
+{
+    "keybinds": {
+        "See_Setup_Info": "F1",
+        "Execute": "F2",
+        "Stop": "F3",
+        "Register_Click_Position": "F4",
+        "New_Marker_Sandbox": "F5",
+        "New_Keybind_Sandbox": "F6",
+        "Quick_Save": "F7",
+        "Recover_Window_Position": "F8",
+        "Save_Close_Setup": "F9",
+        "Kill_Switch": "F10"
+    },
+    "general": {
+        "Run_On_Start": false,
+        "Performance_Mode_Trigger_MS": 99
+    },
+    "visual": {
+        "Click_Effects": true,
+        "Hide_Marker_On_Execute": false,
+        "Hide_Keybind_When_Marker_Is_Hidden": false,
+        "Marker_Size_Multiplier_Percent": 40
+    },
+    "starter_values": {
+        "Default_Delay_Before_Next_Target_MS": 200,
+        "Default_Drag_Duration_MS": 100,
+        "Default_Mouse_Hold_MS": 100,
+        "Default_Auto_Click_Delay_MS": 100,
+        "Default_Screen_Failsafe_PX": 50,
+        "Default_Always_Follow_Mouse": false,
+        "Auto_Click_Click_Randomness": false
+    }
+}

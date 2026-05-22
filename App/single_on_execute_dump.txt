@@ -1,0 +1,154 @@
+    def _on_execute(self):
+        if self._executing or self._failsafe_edit_active:
+            return
+        if self._button_debounce_active():
+            return
+
+        captured = self._capture_current_target_position(persist=False)
+        if not captured and not self._has_position():
+            self._set_status("⚠  Register a position first!", "#ff4d4d")
+            QtCore.QTimer.singleShot(2500, lambda: self._set_status(""))
+            return
+
+        # Flush settings → data → disk (original save)
+        self._on_settings_changed()
+        self.save()
+
+        # Write to Active folder (atomic, crash-safe)
+        ActiveSetupManager.write(self.data.get("name", "setup"), self.data)
+
+        self._executing = True
+        self._execution_click_count = 0
+        self._execution_estimated_cps = 0.0
+        self._native_poll_last_count = None
+        self._native_poll_last_time = None
+        self._execution_started_at = time.perf_counter()
+        self._stop_sound_played = False
+
+        # Hide marker if configured
+        cfg = ConfigManager.load()
+        self._click_effects_enabled = bool(cfg.get("visual", {}).get("Click_Effects", True))
+        self._hide_marker_on_execute = bool(cfg.get("visual", {}).get("Hide_Marker_On_Execute", True))
+        self._pending_stop_message = None
+        overlay = self._get_overlay()
+        if self._hide_marker_on_execute:
+            if overlay and overlay.markers:
+                overlay.markers[0]["marker"].hide()
+                overlay.update_hit_region()
+            if overlay:
+                overlay.hide_position_indicator()
+        elif overlay:
+            overlay.set_marker_execution_mode(
+                True,
+                keep_visible=True,
+                x=self.data.get("position", {}).get("x", 0),
+                y=self.data.get("position", {}).get("y", 0),
+            )
+
+        # Let overlay visibility/mask changes settle before the worker resolves the target HWND.
+        app = QtWidgets.QApplication.instance()
+        if app is not None:
+            app.processEvents(QtCore.QEventLoop.AllEvents, 50)
+        self._update_follow_mouse_state()
+
+        # Lock settings UI during execution
+        self._exec_btn.setEnabled(False)
+        self._stop_btn.setEnabled(False)
+        self._delay_spin.setEnabled(False)
+        self._hold_spin.setEnabled(False)
+        self._anti_check.setEnabled(False)
+        self._follow_check.setEnabled(False)
+        self._info_btn.setEnabled(False)
+        self._repeat_times_check.setEnabled(False)
+        self._repeat_timer_check.setEnabled(False)
+        self._until_stop_check.setEnabled(False)
+        self._repeat_times_edit_btn.setEnabled(False)
+        self._repeat_timer_edit_btn.setEnabled(False)
+        self._mouse_button_combo.setEnabled(False)
+        self._start_button_debounce()
+        QtCore.QTimer.singleShot(self._button_debounce_ms, self._restore_stop_button_after_debounce)
+
+        try:
+            # Read execution params from Active copy (ground truth)
+            active = ActiveSetupManager.read(self.data.get("name", "setup")) or self.data
+            settings  = active.get("settings", {})
+            pos       = active.get("position", {})
+            failsafe  = self._sanitize_failsafe(active.get("failsafe", {}))
+            repeat_mode = settings.get("repeat_mode", "until_stop")
+            repeat_duration_seconds = settings.get("repeat_timer_seconds", 60)
+            self._execution_duration_seconds = int(repeat_duration_seconds)
+            click_delay_ms = settings.get("click_delay_ms", 100)
+            self._click_effects_enabled = self._click_effects_allowed_for_delay(click_delay_ms)
+            mouse_button = (settings.get("mouse_button", "left") or "left").lower()
+            follow_mouse = bool(settings.get("always_follow_mouse", False))
+            click_randomness = read_click_randomness(settings, True)
+            if follow_mouse:
+                bridge = get_click_engine_bridge()
+                if not bridge.available:
+                    raise RuntimeError(f"ClickEngine DLL unavailable: {bridge.load_error}")
+                try:
+                    bridge.stop_clicking()
+                except Exception:
+                    pass
+
+                if mouse_button != "left":
+                    print(f"[SingleMode] Mouse button '{mouse_button}' selected, but native engine currently uses left-click SendInput.")
+
+                print(f"[SingleMode] Native DLL path active: {bridge.dll_path}")
+                self._worker = _native_click_controller_type()(
+                    delay_us=max(1, int(click_delay_ms)) * 1000,
+                    x=int(pos.get("x", 0)),
+                    y=int(pos.get("y", 0)),
+                    follow_mouse=True,
+                    click_randomness=click_randomness,
+                    enable_click_feedback=self._click_effects_enabled,
+                    parent=self,
+                )
+                if self._click_effects_enabled:
+                    self._worker.clicked.connect(self._on_native_click)
+            else:
+                bridge = get_click_engine_bridge()
+                if bridge.available:
+                    try:
+                        bridge.stop_clicking()
+                    except Exception:
+                        pass
+
+                print("[SingleMode] Python marker compatibility path active.")
+                self._worker = _main_window_module().AutoClickWorker(
+                    x=pos.get("x", 0),
+                    y=pos.get("y", 0),
+                    click_delay_ms=click_delay_ms,
+                    hold_ms=settings.get("mouse_hold_ms", cfg.get("starter_values", {}).get("Default_Mouse_Hold_MS", 100)),
+                    click_randomness=click_randomness,
+                    use_real_click=False,
+                    mouse_button=mouse_button,
+                    repeat_mode=repeat_mode,
+                    repeat_target=settings.get("repeat_times_target", 100),
+                    repeat_duration_seconds=repeat_duration_seconds,
+                    overlay_hwnds=self._cached_overlay_hwnds(),
+                )
+                if self._click_effects_enabled:
+                    self._worker.click_started.connect(self._show_click_effect)
+                    self._worker.click_finished.connect(self._on_worker_click_finished)
+                else:
+                    self._worker.click_finished.connect(self._on_worker_click_count)
+
+            self._worker.stopped.connect(self._on_worker_stopped)
+            self._set_status("Running", "#8be28b")
+
+            self._ensure_progress_timer()
+            self._progress_timer.start()
+            self._update_execution_progress()
+            if follow_mouse:
+                self._start_failsafe_monitor(failsafe)
+            else:
+                self._stop_failsafe_monitor()
+            self._worker.start()
+            self._play_system_sound("SystemAsterisk", 980)
+        except Exception as exc:
+            print(f"[SingleMode] Execute failed: {exc}")
+            self._stop_sound_played = True
+            self._on_worker_stopped()
+            self._set_status(str(exc), "#ff6b6b")
+            QtCore.QTimer.singleShot(4000, lambda: self._set_status(""))

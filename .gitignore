@@ -1,0 +1,38 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Native build byproducts
+App/Core/*.obj
+App/Core/*_smoketest.dll
+App/Core/*_smoketest.exp
+App/Core/*_smoketest.lib
+App/Core/ClickEngine_dynamic.dll
+App/Core/ClickEngine_dynamic.exp
+App/Core/ClickEngine_dynamic.lib
+App/Core/ClickEngine_dynamic2.dll
+App/Core/ClickEngine_dynamic2.exp
+App/Core/ClickEngine_dynamic2.lib
+App/Core/ClickEngine_tuned.dll
+App/Core/ClickEngine_tuned.exp
+App/Core/ClickEngine_tuned.lib
+App/Core/$null
+
+# Dev-only local rebuild helper
+App/Core/Py_C_dll_linker.py
+App/Core/Exe_Builder.py
+
+# Local Windows exe build outputs
+SnapCursorX.exe
+SnapCursorX.spec
+SnapCursorX_SE.spec
+.pyinstaller/
+build/
+dist/
+__EXE_Build_Output/
+__Installer_Output/
+*.nsi
+
+# Local user setup data
+Data/Setups/*.json
+Data/Active/*.json

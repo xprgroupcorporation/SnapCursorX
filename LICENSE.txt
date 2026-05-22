@@ -1,0 +1,310 @@
+                 XPR COMMUNITY SOURCE LICENSE
+                        Version 1.0, 2026
+
+ Copyright (c) 2026 XPR Group Corporation
+
+ Everyone is permitted to copy, reuse, modify, and adapt
+ this license document for their own projects and licensing
+ systems, provided that the original license name remains
+ credited as the base license.
+
+ Modified versions of this license must clearly indicate
+ additional or changed terms and may not falsely claim
+ official association with XPR Group Corporation.
+
+                         Preamble
+
+  The XPR Community Source License is a source-available,
+community-oriented, and educational software license designed
+to encourage learning, experimentation, technical curiosity,
+and collaborative development while protecting creators from
+unauthorized commercial exploitation.
+
+  This license allows individuals, students, researchers,
+developers, and communities to study, modify, and improve
+software openly for non-commercial purposes. The intention of
+this license is to support knowledge sharing and responsible
+community-driven growth.
+
+  Unlike traditional open-source licenses, this license does
+not permit unrestricted commercial use. Commercial rights are
+reserved exclusively for the original creator, owner, or
+maintaining organization of the project using this License.
+
+  These protections are intended to help creators share
+their work openly with communities, students, researchers,
+and developers without risking unauthorized commercial
+exploitation of their efforts.
+
+  Software development often requires significant time,
+research, experimentation, maintenance, problem-solving,
+creative effort, and long-term dedication. This License
+exists to encourage healthy knowledge sharing while ensuring
+that creators maintain fair control over how their work is
+commercially used.
+
+  The purpose of this License is not to discourage learning,
+modification, or community contribution. Instead, it is
+designed to support sustainable collaboration by preventing
+situations where third parties commercially profit from the
+work, reputation, or contributions of creators without
+permission or meaningful participation.
+
+                    TERMS AND CONDITIONS
+
+  0. Definitions.
+
+  "License" refers to the XPR Community Source License.
+
+  "Software" refers to any project, source code, binaries,
+documentation, assets, or associated materials released under
+this License.
+
+  "Modification" refers to any altered, edited, expanded, or
+derived version of the Software.
+
+  "Commercial Use" refers to any activity intended primarily
+for financial gain, monetization, subscription access,
+paid services, commercial redistribution, or revenue
+generation.
+
+1. Permission Grant and License Reuse.
+
+  Permission is granted to use, study, analyze, modify,
+experiment with, and privately distribute the Software for
+personal, educational, research, and non-commercial purposes.
+
+  Users may create private modifications without obligation
+to publicly release their source code.
+
+  This license document may be reused and adapted for other
+projects and licensing systems provided that the core terms,
+structure, and protections of this License are not falsely
+misrepresented or substantially altered while still claiming
+to be the original XPR Community Source License.
+
+  Project owners may customize attribution information,
+project-specific terms, permissions, restrictions,
+commercial conditions, contact information, or custom
+sections explicitly intended for project-level modification.
+
+  Additional project-specific terms may be appended after
+the main license body within designated custom sections.
+
+  Any modified or derivative version of this license must:
+
+    a) Retain credit to the XPR Community Source License
+       as the original base license
+
+    b) Clearly indicate modified, removed, or additional
+       terms
+
+    c) Not falsely claim official association with
+       XPR Group Corporation
+
+  2. Permission Grant.
+
+  Permission is granted to use, study, analyze, modify,
+experiment with, and privately distribute the Software for
+personal, educational, research, and non-commercial purposes.
+
+  Users may create private modifications without obligation
+to publicly release their source code.
+
+  3. Source Availability Requirement.
+
+  If a modified version, fork, derivative work, or
+redistributed build of the Software is publicly distributed,
+the complete corresponding source code of those modifications
+must also be made publicly accessible under this License or a
+compatible non-commercial community-source license.
+
+  Public distribution of modified versions without source
+availability is not permitted.
+
+  4. Commercial Restrictions.
+
+  Without explicit written permission from the original
+creator, copyright holder, or authorized contributors of the
+Software, you may NOT:
+
+    a) Sell the Software
+
+    b) Sell modified versions of the Software
+
+    c) Monetize the Software directly or indirectly
+
+    d) Include the Software in paid products or services
+
+    e) Rebrand and commercially redistribute the Software
+
+    f) Use the Software within subscription-based systems
+
+    g) Claim authorship of the original Software
+
+    h) Misrepresent ownership, origin, or authorship
+      of the Software
+
+    i) Profit primarily from work substantially
+      derived from the Software
+
+  All commercial rights are exclusively reserved by the
+original creator, copyright holder, or authorized project
+owners of the Software.
+
+5. Attribution Requirement.
+
+  Any public redistribution, modification, or derivative
+work must include visible attribution to the original
+creator, copyright holder, organization, or project owner
+of the Software.
+
+  Required attribution information should be provided within
+the attribution section located at the end of this License
+or within another clearly visible attribution location
+associated with the Software.
+
+  Attribution information may be customized by the project
+owner for project-specific identification, contributors,
+organizations, repositories, contact information, or other
+project-related details, provided that such modifications do
+not remove, falsify, override, or conflict with existing
+required attribution information.
+
+  Attribution information should remain reasonably visible
+within source code, documentation, project pages, about
+sections, or other appropriate locations associated with
+the Software.
+
+
+  6. Disclaimer.
+
+  The Software is provided "as is" without guarantees
+or warranties of any kind.
+
+  The original creator, contributors, maintainers,
+copyright holders, or distributors are not responsible
+for unintended issues, damages, data loss, system
+problems, or other consequences resulting from the
+normal use, modification, or redistribution of the
+Software.
+
+  Users are responsible for reviewing, understanding,
+and safely using the Software within their own
+environment and according to applicable laws and
+regulations.
+
+  This disclaimer does not grant permission for
+malicious, unlawful, intentionally harmful, or
+deceptive behavior.
+
+  The creators and contributors are not obligated
+to provide support, updates, maintenance, bug fixes,
+or continued development for the Software.
+
+  7. Intellectual Property Clarification.
+
+  This License governs the permitted use, modification,
+distribution, and commercial restrictions of the Software
+and its original contents.
+
+  This License does not claim ownership over general ideas,
+concepts, software genres, workflows, programming techniques,
+or independently developed implementations that do not copy
+substantial portions of the Software or its protected assets.
+
+  Independent projects with similar functionality, features,
+or overall purpose are not automatically considered derivative
+works unless they substantially copy protected source code,
+assets, documentation, branding, or other original creative
+elements from the Software.
+
+  Copyright ownership remains applicable only to legally
+protectable elements of the Software under relevant copyright
+laws.
+
+  8. Termination.
+
+  If any individual, organization, contributor, distributor,
+or user of the Software violates the terms or conditions of
+this License, the permissions granted to that violating party
+under this License shall automatically terminate.
+
+  Upon termination, the violating party must cease all
+unauthorized use, public distribution, commercial activity,
+and redistribution of the Software until the violation has
+been resolved or explicit permission has been restored by the
+original creator, copyright holder, or authorized project
+owners.
+
+  Termination of permissions under this section does not
+affect the rights of other users or contributors who remain
+in compliance with this License.
+
+  9. Trademark and Branding.
+
+  This License does not grant permission to use the
+trademarks, logos, branding, project identities, or public
+reputation associated with the Software except for reasonable
+attribution purposes.
+
+  Reuse of branding in ways that imply official endorsement,
+partnership, ownership, or association without permission is
+not permitted.
+
+  10. Contributions.
+
+  Unless otherwise agreed in writing, contributors retain
+ownership of their original contributions while granting the
+project maintainers permission to use, modify, and distribute
+those contributions as part of the Software under this
+License.
+
+  11. Compliance With Laws.
+
+  This License does not permit the use, distribution,
+modification, or deployment of the Software in ways that
+violate applicable laws or regulations.
+
+  Users remain solely responsible for ensuring that their
+use of the Software complies with applicable legal,
+ethical, safety, and security requirements.
+
+                    END OF TERMS AND CONDITIONS
+
+----------------------------------------------------------------
+
+                Required Attribution Information
+
+  Projects using this License should provide the following
+attribution information below this section:
+
+    Copyright (c) 2026 XPR Group Corporation / XPR Studio
+    Edit date 16/05/2025 [dd/mm/yyyy]
+
+    Original Creator:
+    AC4 (Founder)
+
+    Organization/ individual(s?):
+    XPR Group Corporation
+    XPR Studio
+
+    Original Project Name:
+    SnapCursorX
+
+    Source Repository or Project Page:
+    https://github.com/xprgroupcorporation/SnapCursorX
+
+----------------------------------------------------------------
+
+                Custom Project Terms Section
+
+  Users may append additional project-specific rules,
+permissions, or restrictions below this section.
+
+----------------------------------------------------------------
+
+N/A
+
+----------------------------------------------------------------
+                     END OF LICENSE
