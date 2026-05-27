@@ -1,5 +1,6 @@
 ﻿import subprocess, sys
 import os
+from pathlib import Path
 from PySide6.QtGui import QDesktopServices
 import json
 import ctypes
@@ -10,9 +11,6 @@ import copy
 import re
 import winsound
 import queue
-import tempfile
-import urllib.error
-import urllib.request
 from PySide6 import QtWidgets, QtCore, QtGui
 import sys
 import win32gui, win32con, win32api
@@ -21,6 +19,7 @@ import pyautogui
 from Config.Manager import AppConfig, ConfigManager, SettingDisplay
 from Core.Input import NativeClickController, get_click_engine_bridge
 from Core.Setup import SetupManager, ActiveSetupManager
+from Core.Updater_Module import UpdateCheckWorker, UpdateDownloadWorker, parse_numeric_version_text
 from Core.Utils import ASSETS_DIR
 from UI.components.animations import WindowAnimator
 from UI.components.spinbox import HorizontalStepSpinBox
@@ -221,163 +220,6 @@ def atomic_json_write(path, data):
 
 UPDATE_RELEASE_API_URL = AppConfig.UPDATE_RELEASE_API_URL
 UPDATE_RELEASE_PAGE_URL = AppConfig.UPDATE_RELEASE_PAGE_URL
-
-
-def _parse_numeric_version_text(raw_version: str) -> str:
-    match = re.search(r"\d+(?:\.\d+)+", str(raw_version or ""))
-    return match.group(0) if match else "0.0.0"
-
-
-def _compare_versions(left: str, right: str) -> int:
-    def normalize(version_text: str):
-        parts = [int(part) for part in str(version_text).split(".") if str(part).isdigit()]
-        while len(parts) < 4:
-            parts.append(0)
-        return parts[:4]
-
-    left_parts = normalize(left)
-    right_parts = normalize(right)
-    if left_parts > right_parts:
-        return 1
-    if left_parts < right_parts:
-        return -1
-    return 0
-
-
-class UpdateCheckWorker(QtCore.QObject):
-    finished = QtCore.Signal(dict)
-
-    def __init__(self, current_version: str):
-        super().__init__()
-        self._current_version = _parse_numeric_version_text(current_version)
-
-    def run(self):
-        if not self._has_internet():
-            self.finished.emit({
-                "status": "no_internet",
-                "label": "No Internet\nCan't Check Updates",
-                "latest_version": "",
-                "release_page_url": UPDATE_RELEASE_PAGE_URL,
-                "assets": {},
-            })
-            return
-
-        release_data = self._load_release_data()
-        if not release_data:
-            self.finished.emit({
-                "status": "latest",
-                "label": "(Latest ver)",
-                "latest_version": self._current_version,
-                "release_page_url": UPDATE_RELEASE_PAGE_URL,
-                "assets": {},
-            })
-            return
-
-        latest_version = _parse_numeric_version_text(release_data.get("tag_name", "0.0.0"))
-        assets = self._extract_assets(release_data.get("assets", []))
-        release_page_url = str(
-            release_data.get("html_url")
-            or release_data.get("url")
-            or UPDATE_RELEASE_PAGE_URL
-        )
-
-        if latest_version and _compare_versions(latest_version, self._current_version) > 0:
-            self.finished.emit({
-                "status": "update_available",
-                "label": f"New Update!\nVer{latest_version}",
-                "latest_version": latest_version,
-                "release_page_url": release_page_url,
-                "assets": assets,
-            })
-            return
-
-        self.finished.emit({
-            "status": "latest",
-            "label": "(Latest ver)",
-            "latest_version": latest_version or self._current_version,
-            "release_page_url": release_page_url,
-            "assets": assets,
-        })
-
-    def _has_internet(self) -> bool:
-        try:
-            request = urllib.request.Request(
-                "https://api.github.com",
-                headers={"User-Agent": "SnapCursorX-UpdateChecker"},
-            )
-            with urllib.request.urlopen(request, timeout=4):
-                return True
-        except Exception:
-            return False
-
-    def _load_release_data(self):
-        try:
-            request = urllib.request.Request(
-                UPDATE_RELEASE_API_URL,
-                headers={
-                    "Accept": "application/vnd.github+json",
-                    "User-Agent": "SnapCursorX-UpdateChecker",
-                },
-            )
-            with urllib.request.urlopen(request, timeout=6) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except Exception:
-            return None
-
-    def _extract_assets(self, assets: list[dict]):
-        result = {}
-        for asset in assets:
-            name = str(asset.get("name", ""))
-            url = str(asset.get("browser_download_url", ""))
-            lowered = name.lower()
-            if not name or not url:
-                continue
-            if "installer" in lowered or lowered.endswith(".msi") or lowered.endswith("setup.exe"):
-                result.setdefault("installer", {"name": name, "url": url})
-                continue
-            if lowered.endswith(".exe"):
-                result.setdefault("portable", {"name": name, "url": url})
-        return result
-
-
-class UpdateDownloadWorker(QtCore.QObject):
-    progress = QtCore.Signal(int)
-    finished = QtCore.Signal(str)
-    failed = QtCore.Signal(str)
-
-    def __init__(self, download_url: str, filename: str):
-        super().__init__()
-        self._download_url = str(download_url or "")
-        self._filename = str(filename or "SnapCursorX_Update.exe")
-
-    def run(self):
-        try:
-            download_dir = Path(tempfile.gettempdir()) / "SnapCursorX_Updates"
-            download_dir.mkdir(parents=True, exist_ok=True)
-            target_path = download_dir / self._filename
-
-            request = urllib.request.Request(
-                self._download_url,
-                headers={"User-Agent": "SnapCursorX-Updater"},
-            )
-            with urllib.request.urlopen(request, timeout=30) as response:
-                total_size = int(response.headers.get("Content-Length", "0") or "0")
-                downloaded = 0
-                with target_path.open("wb") as handle:
-                    while True:
-                        chunk = response.read(1024 * 128)
-                        if not chunk:
-                            break
-                        handle.write(chunk)
-                        downloaded += len(chunk)
-                        if total_size > 0:
-                            percent = max(0, min(100, int(downloaded * 100 / total_size)))
-                            self.progress.emit(percent)
-
-            self.progress.emit(100)
-            self.finished.emit(str(target_path))
-        except Exception as exc:
-            self.failed.emit(str(exc).strip() or exc.__class__.__name__)
 
 
 def make_noactivate_topmost(widget):
@@ -1109,7 +951,7 @@ class ControlPanel(QtWidgets.QMainWindow):
         self._update_status = {
             "status": "idle",
             "label": "(Latest ver)",
-            "latest_version": _parse_numeric_version_text(AppConfig.VERSION),
+            "latest_version": parse_numeric_version_text(AppConfig.VERSION),
             "release_page_url": UPDATE_RELEASE_PAGE_URL,
             "assets": {},
         }
@@ -2254,7 +2096,11 @@ class ControlPanel(QtWidgets.QMainWindow):
         self._set_update_button_label("Checking Updates...")
 
         thread = QtCore.QThread(self)
-        worker = UpdateCheckWorker(AppConfig.VERSION)
+        worker = UpdateCheckWorker(
+            AppConfig.VERSION,
+            UPDATE_RELEASE_API_URL,
+            UPDATE_RELEASE_PAGE_URL,
+        )
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
         worker.finished.connect(self._on_update_check_finished)
@@ -2328,18 +2174,34 @@ class ControlPanel(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.warning(self, "Update", "Download URL is empty. Replace the placeholder release URL first.")
             return
 
+        target_dir = ""
+        if asset_kind == "portable":
+            downloads_dir = self._downloads_dir()
+            reply = QtWidgets.QMessageBox.question(
+                self,
+                "Download Portable Update",
+                "Download the new portable update to your Downloads folder?\n\n"
+                f"Location:\n{downloads_dir}",
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.Yes,
+            )
+            if reply != QtWidgets.QMessageBox.Yes:
+                return
+            target_dir = str(downloads_dir)
+
         progress = QtWidgets.QProgressDialog("Downloading update...", None, 0, 100, self)
         progress.setWindowTitle("Update")
         progress.setCancelButton(None)
         progress.setMinimumDuration(0)
         progress.setAutoClose(False)
         progress.setAutoReset(False)
+        progress.setWindowModality(QtCore.Qt.WindowModal)
         progress.setValue(0)
         progress.show()
         self._update_progress_dialog = progress
 
         thread = QtCore.QThread(self)
-        worker = UpdateDownloadWorker(download_url, filename)
+        worker = UpdateDownloadWorker(download_url, filename, target_dir=target_dir)
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
         worker.progress.connect(progress.setValue)
@@ -2374,13 +2236,42 @@ class ControlPanel(QtWidgets.QMainWindow):
                     subprocess.Popen(["msiexec.exe", "/i", path, "/quiet", "/norestart"])
                 else:
                     subprocess.Popen([path, "/S"], cwd=str(Path(path).parent))
+                QtWidgets.QApplication.quit()
             else:
-                subprocess.Popen([path], cwd=str(Path(path).parent))
+                download_path = Path(path)
+                self._launch_portable_update_helper(download_path)
+                QtWidgets.QApplication.quit()
         except Exception as exc:
             QtWidgets.QMessageBox.warning(self, "Update", f"Failed to launch update:\n{exc}")
             return
 
-        QtWidgets.QApplication.quit()
+    def _downloads_dir(self) -> Path:
+        return Path.home() / "Downloads"
+
+    def _launch_portable_update_helper(self, download_path: Path):
+        folder = str(download_path.parent).replace("'", "''")
+        message = (
+            "Downloaded new update.`n`n"
+            "Extract the zip and enjoy.`n`n"
+            "Note: we only download from official GitHub if you downloaded the program from the official source."
+        ).replace("'", "''")
+        command = (
+            f"Start-Sleep -Milliseconds 900; "
+            f"Start-Process explorer.exe '{folder}'; "
+            f"$ws = New-Object -ComObject WScript.Shell; "
+            f"$null = $ws.Popup('{message}', 0, 'SnapCursorX Update', 64)"
+        )
+        subprocess.Popen(
+            [
+                "powershell",
+                "-NoProfile",
+                "-WindowStyle",
+                "Hidden",
+                "-Command",
+                command,
+            ],
+            cwd=str(download_path.parent),
+        )
 
     def _on_update_download_failed(self, message: str):
         if self._update_progress_dialog is not None:
