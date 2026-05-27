@@ -32,6 +32,7 @@ dist/
 __EXE_Build_Output/
 __Installer_Output/
 *.nsi
+*.zip
 
 # Local user setup data
 Data/Setups/*.json
