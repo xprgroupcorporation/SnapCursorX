@@ -2395,20 +2395,21 @@ class ControlPanel(QtWidgets.QMainWindow):
 
     def _launch_installer_update(self, installer_path: Path):
         installer_path = Path(installer_path)
+        install_dir = BASE_DIR if self._looks_like_installed_app() else None
         if installer_path.suffix.lower() == ".msi":
-            file_path = "msiexec.exe"
-            params = f'/i "{installer_path}" /quiet /norestart'
+            install_target = f' INSTALLDIR="{install_dir}"' if install_dir else ""
+            command = f'timeout /t 2 /nobreak >nul & msiexec.exe /i "{installer_path}" /quiet /norestart{install_target}'
         else:
-            file_path = str(installer_path)
-            params = "/S"
+            install_target = f" /D={install_dir}" if install_dir else ""
+            command = f'timeout /t 2 /nobreak >nul & "{installer_path}" /S{install_target}'
 
         result = ctypes.windll.shell32.ShellExecuteW(
             None,
             "runas",
-            file_path,
-            params,
+            "cmd.exe",
+            f'/c {command}',
             str(installer_path.parent),
-            1,
+            0,
         )
         if result <= 32:
             raise RuntimeError(f"[WinError {result}] The requested operation requires elevation")
