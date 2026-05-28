@@ -1,6 +1,6 @@
 BUILD_INFO = {
     "NAME": "SnapCursorX",
-    "VERSION": "v0.7.6 STARTER EDITION",
+    "VERSION": "v0.6.6 STARTER EDITION",
     "COMPANY": "XPR Group Corporation™",
     "TAGLINE": "Exotic • Passionate • Revolutionize",
     "COPYRIGHT": "©2026",

@@ -2066,7 +2066,7 @@ class ControlPanel(QtWidgets.QMainWindow):
         layout.addSpacing(10)
 
         self._update_release_btn = make_button("Checking For\nUpdates...", self._on_update_release_clicked)
-        self._update_release_btn.setFixedSize(120, 50)
+        self._update_release_btn.setFixedSize(120, 45)
         self._update_release_btn.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         self._update_release_btn.setStyleSheet(self._update_button_style("checking"))
         layout.addWidget(self._update_release_btn)
@@ -2098,7 +2098,7 @@ class ControlPanel(QtWidgets.QMainWindow):
                 color: white;
                 border-radius: 12px;
                 padding: 6.5px 16px;
-                font: 8pt "Times New Roman";
+                font: 8.5pt "Times New Roman";
             }}
             QPushButton:hover {{
                 background: {hover};
