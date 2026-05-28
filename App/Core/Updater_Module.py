@@ -1,6 +1,7 @@
 import json
 import re
 import tempfile
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -31,33 +32,22 @@ def compare_versions(left: str, right: str) -> int:
 class UpdateCheckWorker(QtCore.QObject):
     finished = QtCore.Signal(dict)
 
-    def __init__(self, current_version: str, release_api_url: str, release_page_url: str):
+    def __init__(self, current_version: str, release_api_url: str, release_page_url: str, request_id: int = 0):
         super().__init__()
         self._current_version = parse_numeric_version_text(current_version)
         self._release_api_url = str(release_api_url or "").strip()
         self._release_page_url = str(release_page_url or "").strip()
+        self._request_id = int(request_id)
 
     def run(self):
         try:
             if not self._has_internet():
-                self.finished.emit({
-                    "status": "no_internet",
-                    "label": "No Internet\nCan't Check Updates",
-                    "latest_version": "",
-                    "release_page_url": self._release_page_url,
-                    "assets": {},
-                })
+                self.finished.emit(self._failure_result())
                 return
 
             release_data = self._load_release_data()
             if not release_data:
-                self.finished.emit({
-                    "status": "latest",
-                    "label": "(Latest ver)",
-                    "latest_version": self._current_version,
-                    "release_page_url": self._release_page_url,
-                    "assets": {},
-                })
+                self.finished.emit(self._failure_result())
                 return
 
             latest_version = self._resolve_latest_version(release_data)
@@ -70,6 +60,7 @@ class UpdateCheckWorker(QtCore.QObject):
 
             if latest_version and compare_versions(latest_version, self._current_version) > 0:
                 self.finished.emit({
+                    "request_id": self._request_id,
                     "status": "update_available",
                     "label": f"New Update!\nVer{latest_version}",
                     "latest_version": latest_version,
@@ -79,20 +70,29 @@ class UpdateCheckWorker(QtCore.QObject):
                 return
 
             self.finished.emit({
+                "request_id": self._request_id,
                 "status": "latest",
                 "label": "(Latest ver)",
                 "latest_version": latest_version or self._current_version,
                 "release_page_url": release_page_url,
                 "assets": assets,
             })
-        except Exception:
-            self.finished.emit({
-                "status": "latest",
-                "label": "(Latest ver)",
-                "latest_version": self._current_version,
-                "release_page_url": self._release_page_url,
-                "assets": {},
-            })
+        except Exception as exc:
+            self.finished.emit(self._failure_result(str(exc).strip() or exc.__class__.__name__))
+
+    def _failure_result(self, detail: str = "") -> dict:
+        label = "Check your connection and try again."
+        if detail:
+            label = f"{label} ({detail})"
+        return {
+            "request_id": self._request_id,
+            "status": "check_failed",
+            "label": label,
+            "error": detail,
+            "latest_version": self._current_version,
+            "release_page_url": self._release_page_url,
+            "assets": {},
+        }
 
     def _has_internet(self) -> bool:
         try:
@@ -108,18 +108,32 @@ class UpdateCheckWorker(QtCore.QObject):
     def _load_release_data(self):
         if not self._release_api_url:
             return None
+        url = self._release_api_url
         try:
-            request = urllib.request.Request(
-                self._release_api_url,
-                headers={
-                    "Accept": "application/vnd.github+json",
-                    "User-Agent": "SnapCursorX-UpdateChecker",
-                },
-            )
-            with urllib.request.urlopen(request, timeout=6) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except Exception:
-            return None
+            data = self._request_json(url)
+            if isinstance(data, list):
+                return data[0] if data else None
+            return data
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404 and url.rstrip("/").endswith("/releases/latest"):
+                releases_url = url.rstrip("/")[:-len("/latest")]
+                releases = self._request_json(releases_url)
+                if isinstance(releases, list) and releases:
+                    return releases[0]
+            raise RuntimeError(f"GitHub API returned {exc.code}") from exc
+        except Exception as exc:
+            raise RuntimeError(str(exc).strip() or exc.__class__.__name__) from exc
+
+    def _request_json(self, url: str):
+        request = urllib.request.Request(
+            url,
+            headers={
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "SnapCursorX-UpdateChecker",
+            },
+        )
+        with urllib.request.urlopen(request, timeout=6) as response:
+            return json.loads(response.read().decode("utf-8"))
 
     def _extract_assets(self, assets: list[dict]):
         result = {}

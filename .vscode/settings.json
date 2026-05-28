@@ -4,7 +4,7 @@
     "python.linting.pylintEnabled": true,
     "editor.formatOnSave": true,
     "[python]": {
-        "editor.defaultFormatter": "ms-python.python",
+        "editor.defaultFormatter": "danyarwx.42-python-format",
         "editor.formatOnSave": true
     }
 }

@@ -41,6 +41,23 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
 sys.excepthook = handle_exception
 
+
+def _show_already_running_warning():
+    flags = 0x00000030 | 0x00040000 | 0x00001000  # warning icon, topmost, system modal
+    try:
+        ctypes.windll.user32.MessageBoxW(
+            None,
+            "SnapCursorX is already running.",
+            "SnapCursorX",
+            flags,
+        )
+    except Exception:
+        QtWidgets.QMessageBox.warning(
+            None,
+            "SnapCursorX",
+            "SnapCursorX is already running.",
+        )
+
 def main():
     _configure_windows_dpi()
     from Loading import LoadingWindow
@@ -53,12 +70,8 @@ def main():
         "Local\\SnapCursorX_MainControlPanel_SingleInstance"
     )
 
-    if win32api.GetLastError() == winerror.ERROR_ALREADY_EXISTS:
-        QtWidgets.QMessageBox.warning(
-            None,
-            "SnapCursorX",
-            "SnapCursorX is already running."
-        )
+    if win32api.GetLastError() in (winerror.ERROR_ALREADY_EXISTS, winerror.ERROR_ACCESS_DENIED):
+        _show_already_running_warning()
         return 0
 
     app._single_instance_mutex = single_instance_mutex

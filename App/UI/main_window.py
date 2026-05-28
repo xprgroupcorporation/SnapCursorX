@@ -20,7 +20,7 @@ from Config.Manager import AppConfig, ConfigManager, SettingDisplay
 from Core.Input import NativeClickController, get_click_engine_bridge
 from Core.Setup import SetupManager, ActiveSetupManager
 from Core.Updater_Module import UpdateCheckWorker, UpdateDownloadWorker, parse_numeric_version_text
-from Core.Utils import ASSETS_DIR
+from Core.Utils import ASSETS_DIR, BASE_DIR
 from UI.components.animations import WindowAnimator
 from UI.components.spinbox import HorizontalStepSpinBox
 from Modes._SharedUtils.Worker_helper import SharedWorkerHelper
@@ -957,6 +957,9 @@ class ControlPanel(QtWidgets.QMainWindow):
         }
         self._update_check_thread = None
         self._update_check_worker = None
+        self._stale_update_check_threads = []
+        self._update_check_timeout_timer = None
+        self._update_check_request_id = 0
         self._update_download_thread = None
         self._update_download_worker = None
         self._update_progress_dialog = None
@@ -2062,27 +2065,10 @@ class ControlPanel(QtWidgets.QMainWindow):
         layout.addStretch()
         layout.addSpacing(10)
 
-        self._update_release_btn = make_button("Checking Updates...", self._on_update_release_clicked)
-        self._update_release_btn.setMinimumHeight(48)
-        self._update_release_btn.setStyleSheet("""
-            QPushButton {
-                background: rgba(150,150,150,12);
-                color: white;
-                border-radius: 12px;
-                padding: 6.5px 16px;
-                font: 9pt "Times New Roman";
-            }
-            QPushButton:hover {
-                background: rgba(200,200,200,25);
-            }
-            QPushButton:pressed {
-                background: rgba(220,220,220,40);
-            }
-            QPushButton:disabled {
-                background: rgba(150,150,150,12);
-                color: rgba(255,255,255,90);
-            }
-        """)
+        self._update_release_btn = make_button("Checking For\nUpdates...", self._on_update_release_clicked)
+        self._update_release_btn.setFixedSize(120, 50)
+        self._update_release_btn.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        self._update_release_btn.setStyleSheet(self._update_button_style("checking"))
         layout.addWidget(self._update_release_btn)
         
         layout.addSpacing(2)
@@ -2091,21 +2077,103 @@ class ControlPanel(QtWidgets.QMainWindow):
 
         return container
 
-    def _set_update_button_label(self, text: str):
+    def _set_update_button_label(self, text):
         if hasattr(self, "_update_release_btn") and self._update_release_btn is not None:
-            self._update_release_btn.setText(str(text or "(Latest ver)"))
+            display_text, style_state = self._format_update_button_label(text)
+            self._update_release_btn.setText(display_text)
+            self._update_release_btn.setToolTip(self._raw_update_button_label(text))
+            self._update_release_btn.setStyleSheet(self._update_button_style(style_state))
+
+    def _update_button_style(self, state: str) -> str:
+        colors = {
+            "update": ("rgba(150,255,150,150)", "rgba(200,255,200,100)", "rgba(100,255,100,65)"),
+            "checking": ("rgba(150,150,150,80)", "rgba(200,250,200,60)", "rgba(220,220,220,40)"),
+            "failed": ("rgba(255,150,150,100)", "rgba(255,250,200,80)", "rgba(255,220,220,60)"),
+            "latest": ("rgba(150,150,150,20)", "rgba(200,250,200,25)", "rgba(220,220,220,40)"),
+        }
+        bg, hover, pressed = colors.get(state, colors["latest"])
+        return f"""
+            QPushButton {{
+                background: {bg};
+                color: white;
+                border-radius: 12px;
+                padding: 6.5px 16px;
+                font: 8pt "Times New Roman";
+            }}
+            QPushButton:hover {{
+                background: {hover};
+            }}
+            QPushButton:pressed {{
+                background: {pressed};
+            }}
+            QPushButton:disabled {{
+                background: {bg};
+            }}
+        """
+
+    def _raw_update_button_label(self, text) -> str:
+        if isinstance(text, dict):
+            return str(text.get("label") or text.get("status") or "").strip()
+        return str(text or "").strip()
+
+    def _format_update_button_label(self, text) -> tuple[str, str]:
+        if isinstance(text, dict):
+            status = str(text.get("status", "")).strip().lower()
+            label = str(text.get("label", "")).strip()
+            latest_version = parse_numeric_version_text(text.get("latest_version", ""))
+            if status == "update_available":
+                return f"New Update!\nVer{latest_version}", "update"
+            if status == "latest":
+                return "Latest Release\n(Click for info)", "latest"
+            if status == "checking":
+                return "Checking For\nUpdates...", "checking"
+            if status in ("check_failed", "no_internet"):
+                return "Check Failed\nTry Again", "failed"
+            text = label or status
+
+        raw_text = str(text or "").strip()
+        normalized = " ".join(raw_text.split()).lower()
+        if not raw_text:
+            return "(Latest ver)", "latest"
+        if normalized in ("check", "checking", "checking updates...", "checking for updates..."):
+            return "Checking For\nUpdates...", "checking"
+        if "new update" in normalized:
+            latest_version = parse_numeric_version_text(raw_text)
+            return (f"New Update!\nVer{latest_version}" if latest_version != "0.0.0" else "New Update!"), "update"
+        if "latest" in normalized:
+            return "(Latest ver)", "latest"
+        if (
+            "try again" in normalized
+            or "check your connection" in normalized
+            or "no internet" in normalized
+            or "can't check" in normalized
+            or "failed" in normalized
+        ):
+            return "Check Failed\nTry Again", "failed"
+        return raw_text, "latest"
 
     def _start_update_check(self):
         if self._update_check_thread is not None:
             return
         self._update_check_started = True
-        self._set_update_button_label("Checking Updates...")
+        self._update_check_request_id += 1
+        request_id = self._update_check_request_id
+        self._update_status = {
+            "request_id": request_id,
+            "status": "checking",
+            "label": "Checking for updates...",
+            "latest_version": parse_numeric_version_text(AppConfig.VERSION),
+            "release_page_url": UPDATE_RELEASE_PAGE_URL,
+            "assets": {},
+        }
+        self._set_update_button_label(self._update_status)
 
         thread = QtCore.QThread(self)
         worker = UpdateCheckWorker(
             AppConfig.VERSION,
             UPDATE_RELEASE_API_URL,
             UPDATE_RELEASE_PAGE_URL,
+            request_id=request_id,
         )
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
@@ -2113,22 +2181,63 @@ class ControlPanel(QtWidgets.QMainWindow):
         worker.finished.connect(thread.quit)
         worker.finished.connect(worker.deleteLater)
         thread.finished.connect(thread.deleteLater)
+        thread.finished.connect(lambda t=thread: self._forget_stale_update_check_thread(t))
         self._update_check_thread = thread
         self._update_check_worker = worker
+        self._start_update_check_timeout(request_id)
         thread.start()
 
     def _on_update_check_finished(self, result: dict):
-        self._update_status = dict(result or {})
-        self._set_update_button_label(self._update_status.get("label", "(Latest ver)"))
+        result = dict(result or {})
+        if result.get("request_id") != self._update_check_request_id:
+            return
+        self._stop_update_check_timeout()
+        self._update_status = result
+        self._set_update_button_label(self._update_status)
         self._update_check_thread = None
         self._update_check_worker = None
 
+    def _start_update_check_timeout(self, request_id: int):
+        self._stop_update_check_timeout()
+        timer = QtCore.QTimer(self)
+        timer.setSingleShot(True)
+        timer.timeout.connect(lambda: self._on_update_check_timeout(request_id))
+        self._update_check_timeout_timer = timer
+        timer.start(9000)
+
+    def _stop_update_check_timeout(self):
+        if self._update_check_timeout_timer is not None:
+            self._update_check_timeout_timer.stop()
+            self._update_check_timeout_timer.deleteLater()
+            self._update_check_timeout_timer = None
+
+    def _on_update_check_timeout(self, request_id: int):
+        if request_id != self._update_check_request_id:
+            return
+        self._update_check_request_id += 1
+        self._update_status = {
+            "request_id": self._update_check_request_id,
+            "status": "check_failed",
+            "label": "Check your connection and try again.",
+            "latest_version": parse_numeric_version_text(AppConfig.VERSION),
+            "release_page_url": UPDATE_RELEASE_PAGE_URL,
+            "assets": {},
+        }
+        self._set_update_button_label(self._update_status)
+        if self._update_check_thread is not None:
+            self._stale_update_check_threads.append((self._update_check_thread, self._update_check_worker))
+        self._update_check_thread = None
+        self._update_check_worker = None
+        self._stop_update_check_timeout()
+
+    def _forget_stale_update_check_thread(self, thread):
+        self._stale_update_check_threads = [
+            pair for pair in self._stale_update_check_threads if pair[0] is not thread
+        ]
+
     def _on_update_release_clicked(self):
         status = str(self._update_status.get("status", "idle"))
-        if status in ("idle", "checking"):
-            self._start_update_check()
-            return
-        if status == "no_internet":
+        if status in ("idle", "checking", "no_internet", "check_failed"):
             self._start_update_check()
             return
         if status != "update_available":
@@ -2139,22 +2248,37 @@ class ControlPanel(QtWidgets.QMainWindow):
         installer_asset = assets.get("installer")
         portable_asset = assets.get("portable")
         latest_version = self._update_status.get("latest_version", "")
+        recommended_kind = self._recommended_update_kind(installer_asset, portable_asset)
+        recommended_asset = installer_asset if recommended_kind == "installer" else portable_asset
 
         msg = QtWidgets.QMessageBox(self)
         msg.setWindowTitle("Update Available")
         msg.setText(f"New Update!\nVer{latest_version}")
-        msg.setInformativeText("Choose how you want to test the update.")
+        msg.setInformativeText(
+            "Recommended: "
+            + ("Installer update detected." if recommended_kind == "installer" else "Portable update detected.")
+            + "\n\nYou can still choose any available update type below."
+        )
+        recommended_btn = None
         installer_btn = None
         portable_btn = None
-        if installer_asset:
-            installer_btn = msg.addButton("Download Installer", QtWidgets.QMessageBox.AcceptRole)
-        if portable_asset:
-            portable_btn = msg.addButton("Download Portable", QtWidgets.QMessageBox.AcceptRole)
+        if recommended_asset:
+            recommended_label = "Recommended: Download Installer" if recommended_kind == "installer" else "Recommended: Download Portable"
+            recommended_btn = msg.addButton(recommended_label, QtWidgets.QMessageBox.AcceptRole)
+        if installer_asset and recommended_kind != "installer":
+            installer_btn = msg.addButton("Download Installer", QtWidgets.QMessageBox.ActionRole)
+        if portable_asset and recommended_kind != "portable":
+            portable_btn = msg.addButton("Download Portable", QtWidgets.QMessageBox.ActionRole)
         release_btn = msg.addButton("Open Release Page", QtWidgets.QMessageBox.ActionRole)
         cancel_btn = msg.addButton(QtWidgets.QMessageBox.Cancel)
+        if recommended_btn is not None:
+            msg.setDefaultButton(recommended_btn)
         msg.exec()
 
         clicked = msg.clickedButton()
+        if clicked == recommended_btn:
+            self._start_update_download(recommended_kind, recommended_asset)
+            return
         if clicked == installer_btn:
             self._start_update_download("installer", installer_asset)
             return
@@ -2166,6 +2290,21 @@ class ControlPanel(QtWidgets.QMainWindow):
             return
         if clicked == cancel_btn:
             return
+
+    def _recommended_update_kind(self, installer_asset: dict | None, portable_asset: dict | None) -> str:
+        if self._looks_like_installed_app() and installer_asset:
+            return "installer"
+        if portable_asset:
+            return "portable"
+        if installer_asset:
+            return "installer"
+        return "portable"
+
+    def _looks_like_installed_app(self) -> bool:
+        try:
+            return (BASE_DIR / "uninstall.exe").exists()
+        except Exception:
+            return False
 
     def _start_update_download(self, asset_kind: str, asset: dict | None):
         if not asset:
@@ -2282,7 +2421,7 @@ class ControlPanel(QtWidgets.QMainWindow):
         message.setText("Downloaded new update.")
         message.setInformativeText(
             "Extract the zip and enjoy.\n\n"
-            "Note: we only download from official GitHub if you downloaded the program from the official source.\n\n"
+            "Note: We only download latest releases from official GitHub. if you downloaded the program from the official source there should be no safety problems.\n\n"
             f"Saved to:\n{download_path}\n\n"
             "You can close SnapCursorX now and replace the old portable files, or continue using the current version."
         )
@@ -2306,7 +2445,7 @@ class ControlPanel(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.warning(
             self,
             "Update",
-            "Download failed.\nReplace the placeholder update URL with your real release URL and try again.\n\n"
+            "Download failed.\n check your internet connection and try again or redownload from our github that listed in about & credit page.\n\n"
             f"Details: {message}",
         )
     
