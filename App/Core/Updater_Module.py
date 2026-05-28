@@ -38,18 +38,54 @@ class UpdateCheckWorker(QtCore.QObject):
         self._release_page_url = str(release_page_url or "").strip()
 
     def run(self):
-        if not self._has_internet():
-            self.finished.emit({
-                "status": "no_internet",
-                "label": "No Internet\nCan't Check Updates",
-                "latest_version": "",
-                "release_page_url": self._release_page_url,
-                "assets": {},
-            })
-            return
+        try:
+            if not self._has_internet():
+                self.finished.emit({
+                    "status": "no_internet",
+                    "label": "No Internet\nCan't Check Updates",
+                    "latest_version": "",
+                    "release_page_url": self._release_page_url,
+                    "assets": {},
+                })
+                return
 
-        release_data = self._load_release_data()
-        if not release_data:
+            release_data = self._load_release_data()
+            if not release_data:
+                self.finished.emit({
+                    "status": "latest",
+                    "label": "(Latest ver)",
+                    "latest_version": self._current_version,
+                    "release_page_url": self._release_page_url,
+                    "assets": {},
+                })
+                return
+
+            latest_version = self._resolve_latest_version(release_data)
+            assets = self._extract_assets(release_data.get("assets", []))
+            release_page_url = str(
+                release_data.get("html_url")
+                or release_data.get("url")
+                or self._release_page_url
+            )
+
+            if latest_version and compare_versions(latest_version, self._current_version) > 0:
+                self.finished.emit({
+                    "status": "update_available",
+                    "label": f"New Update!\nVer{latest_version}",
+                    "latest_version": latest_version,
+                    "release_page_url": release_page_url,
+                    "assets": assets,
+                })
+                return
+
+            self.finished.emit({
+                "status": "latest",
+                "label": "(Latest ver)",
+                "latest_version": latest_version or self._current_version,
+                "release_page_url": release_page_url,
+                "assets": assets,
+            })
+        except Exception:
             self.finished.emit({
                 "status": "latest",
                 "label": "(Latest ver)",
@@ -57,33 +93,6 @@ class UpdateCheckWorker(QtCore.QObject):
                 "release_page_url": self._release_page_url,
                 "assets": {},
             })
-            return
-
-        latest_version = self._resolve_latest_version(release_data)
-        assets = self._extract_assets(release_data.get("assets", []))
-        release_page_url = str(
-            release_data.get("html_url")
-            or release_data.get("url")
-            or self._release_page_url
-        )
-
-        if latest_version and compare_versions(latest_version, self._current_version) > 0:
-            self.finished.emit({
-                "status": "update_available",
-                "label": f"New Update!\nVer{latest_version}",
-                "latest_version": latest_version,
-                "release_page_url": release_page_url,
-                "assets": assets,
-            })
-            return
-
-        self.finished.emit({
-            "status": "latest",
-            "label": "(Latest ver)",
-            "latest_version": latest_version or self._current_version,
-            "release_page_url": release_page_url,
-            "assets": assets,
-        })
 
     def _has_internet(self) -> bool:
         try:

@@ -960,8 +960,8 @@ class ControlPanel(QtWidgets.QMainWindow):
         self._update_download_thread = None
         self._update_download_worker = None
         self._update_progress_dialog = None
+        self._active_update_asset_kind = ""
         self._update_check_started = False
-        QtCore.QTimer.singleShot(250, self._start_update_check)
 
     def _set_panel_size(self, width: int, height: int):
         self.setMinimumSize(width, height)
@@ -982,6 +982,12 @@ class ControlPanel(QtWidgets.QMainWindow):
 
         self.show()
         WindowAnimator.fade_in(self)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if not self._update_check_started:
+            self._update_check_started = True
+            QtCore.QTimer.singleShot(1200, self._start_update_check)
 
     def closeEvent(self, event):
         event.ignore()
@@ -2199,13 +2205,14 @@ class ControlPanel(QtWidgets.QMainWindow):
         progress.setValue(0)
         progress.show()
         self._update_progress_dialog = progress
+        self._active_update_asset_kind = asset_kind
 
         thread = QtCore.QThread(self)
         worker = UpdateDownloadWorker(download_url, filename, target_dir=target_dir)
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
         worker.progress.connect(progress.setValue)
-        worker.finished.connect(lambda path, kind=asset_kind: self._on_update_download_finished(kind, path))
+        worker.finished.connect(self._on_update_download_finished)
         worker.failed.connect(self._on_update_download_failed)
         worker.finished.connect(thread.quit)
         worker.failed.connect(thread.quit)
@@ -2216,7 +2223,7 @@ class ControlPanel(QtWidgets.QMainWindow):
         self._update_download_worker = worker
         thread.start()
 
-    def _on_update_download_finished(self, asset_kind: str, downloaded_path: str):
+    def _on_update_download_finished(self, downloaded_path: str):
         if self._update_progress_dialog is not None:
             self._update_progress_dialog.setValue(100)
             self._update_progress_dialog.close()
@@ -2230,17 +2237,16 @@ class ControlPanel(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.warning(self, "Update", "Downloaded update path is empty.")
             return
 
+        asset_kind = self._active_update_asset_kind
+        self._active_update_asset_kind = ""
+
         try:
             if asset_kind == "installer" or path.lower().endswith(".msi"):
-                if path.lower().endswith(".msi"):
-                    subprocess.Popen(["msiexec.exe", "/i", path, "/quiet", "/norestart"])
-                else:
-                    subprocess.Popen([path, "/S"], cwd=str(Path(path).parent))
+                self._launch_installer_update(Path(path))
                 QtWidgets.QApplication.quit()
             else:
                 download_path = Path(path)
-                self._launch_portable_update_helper(download_path)
-                QtWidgets.QApplication.quit()
+                self._show_portable_update_ready_dialog(download_path)
         except Exception as exc:
             QtWidgets.QMessageBox.warning(self, "Update", f"Failed to launch update:\n{exc}")
             return
@@ -2248,30 +2254,47 @@ class ControlPanel(QtWidgets.QMainWindow):
     def _downloads_dir(self) -> Path:
         return Path.home() / "Downloads"
 
-    def _launch_portable_update_helper(self, download_path: Path):
-        folder = str(download_path.parent).replace("'", "''")
-        message = (
-            "Downloaded new update.`n`n"
-            "Extract the zip and enjoy.`n`n"
-            "Note: we only download from official GitHub if you downloaded the program from the official source."
-        ).replace("'", "''")
-        command = (
-            f"Start-Sleep -Milliseconds 900; "
-            f"Start-Process explorer.exe '{folder}'; "
-            f"$ws = New-Object -ComObject WScript.Shell; "
-            f"$null = $ws.Popup('{message}', 0, 'SnapCursorX Update', 64)"
+    def _launch_installer_update(self, installer_path: Path):
+        installer_path = Path(installer_path)
+        if installer_path.suffix.lower() == ".msi":
+            file_path = "msiexec.exe"
+            params = f'/i "{installer_path}" /quiet /norestart'
+        else:
+            file_path = str(installer_path)
+            params = "/S"
+
+        result = ctypes.windll.shell32.ShellExecuteW(
+            None,
+            "runas",
+            file_path,
+            params,
+            str(installer_path.parent),
+            1,
         )
-        subprocess.Popen(
-            [
-                "powershell",
-                "-NoProfile",
-                "-WindowStyle",
-                "Hidden",
-                "-Command",
-                command,
-            ],
-            cwd=str(download_path.parent),
+        if result <= 32:
+            raise RuntimeError(f"[WinError {result}] The requested operation requires elevation")
+
+    def _show_portable_update_ready_dialog(self, download_path: Path):
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(str(download_path.parent)))
+
+        message = QtWidgets.QMessageBox(self)
+        message.setWindowTitle("Portable Update Downloaded")
+        message.setText("Downloaded new update.")
+        message.setInformativeText(
+            "Extract the zip and enjoy.\n\n"
+            "Note: we only download from official GitHub if you downloaded the program from the official source.\n\n"
+            f"Saved to:\n{download_path}\n\n"
+            "You can close SnapCursorX now and replace the old portable files, or continue using the current version."
         )
+        close_btn = message.addButton("Close Program", QtWidgets.QMessageBox.AcceptRole)
+        continue_btn = message.addButton("Continue Using", QtWidgets.QMessageBox.RejectRole)
+        message.setDefaultButton(close_btn)
+        message.exec()
+
+        if message.clickedButton() == close_btn:
+            QtWidgets.QApplication.quit()
+        elif message.clickedButton() == continue_btn:
+            return
 
     def _on_update_download_failed(self, message: str):
         if self._update_progress_dialog is not None:
@@ -2279,6 +2302,7 @@ class ControlPanel(QtWidgets.QMainWindow):
             self._update_progress_dialog = None
         self._update_download_thread = None
         self._update_download_worker = None
+        self._active_update_asset_kind = ""
         QtWidgets.QMessageBox.warning(
             self,
             "Update",
