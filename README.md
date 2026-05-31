@@ -22,10 +22,10 @@ Instead of repeatedly clicking one location, you can build reusable workflows,
 trigger actions with keybinds, organize logic visually, and customize nearly every aspect of execution.
 It's designed to bridge the gap between a simple auto-clicker and a full automation tool.
 
-💖 **TDLR Features:**
-* Build structured workflows, fully customizable no delay no limit on creating.
+💖 **Key Highlights:**
+* Build workflows quickly. no restrictions, no delay, no limit on creating.
 * Designed to feel clean, modern, and fast.
-* Have simple auto-clicker mode too tho.
+* Includes a simple and powerful auto-clicker mode.
 * Create once, reuse anytime with setup system. Just save & load.
 * Auto Update System, no need to worry for missing out.
 
@@ -50,7 +50,7 @@ Design actions visually, create reusable workflows, and control exactly how your
 * Settings: Global hotkey control
 * Stable and reliable runtime system
 * Designed for both beginners and advanced users
-* (In-Future, I planned online setup sharing and receiving from hub 👍)
+* (Planned: Online workflow sharing and community setup hub.👍)
   
 ### Currently available modes
 ### 🎯 Single Mode
@@ -80,7 +80,7 @@ Design actions visually, create reusable workflows, and control exactly how your
 
 # 🔐 Security & Safety
 * No data collection or tracking & No hidden background processes
-* Internet access is only used for checking new release update from official github
+* Internet access is only used to check for updates from the official GitHub repository.
 For security, only download SnapCursorX from this official GitHub repository.  
 Files from other sources are not officially verified unless mention in this repository.  
 
