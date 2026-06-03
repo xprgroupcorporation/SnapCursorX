@@ -1,14 +1,12 @@
-BUILD_INFO = {
-    "NAME": "SnapCursorX",
-    "VERSION": "v0.8.0 STARTER EDITION",
-    "COMPANY": "XPR Group Corporation™",
-    "TAGLINE": "Exotic • Passionate • Revolutionize",
-    "COPYRIGHT": "©2026",
-    "EMAIL": "xprgroupcorporation@gmail.com",
-    "DISCORD": "https://discord.gg/YqbkxwRKgW",
-    "GitHub": "https://github.com/xprgroupcorporation",
-    "ABOUTUS": "https://xprgroup.carrd.co/",
-    "Production_Compress": true,
-    "UPDATE_RELEASE_API_URL": "https://api.github.com/repos/xprgroupcorporation/SnapCursorX/releases/latest",
-    "UPDATE_RELEASE_PAGE_URL": "https://github.com/xprgroupcorporation/SnapCursorX/releases/latest"
-}
+BUILD_INFO = {'NAME': 'SnapCursorX',
+ 'VERSION': 'v0.8.0 STARTER EDITION',
+ 'COMPANY': 'XPR Group Corporation™',
+ 'TAGLINE': 'Exotic • Passionate • Revolutionize',
+ 'COPYRIGHT': '©2026',
+ 'EMAIL': 'xprgroupcorporation@gmail.com',
+ 'DISCORD': 'https://discord.gg/YqbkxwRKgW',
+ 'GitHub': 'https://github.com/xprgroupcorporation',
+ 'ABOUTUS': 'https://xprgroup.carrd.co/',
+ 'Production_Compress': True,
+ 'UPDATE_RELEASE_API_URL': 'https://api.github.com/repos/xprgroupcorporation/SnapCursorX/releases/latest',
+ 'UPDATE_RELEASE_PAGE_URL': 'https://github.com/xprgroupcorporation/SnapCursorX/releases/latest'}
