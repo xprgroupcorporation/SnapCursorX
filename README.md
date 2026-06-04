@@ -75,7 +75,7 @@ Design actions visually, create reusable workflows, and control exactly how your
     <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235528.png" width="320"/>
 </div>
 
-### Currently available modes
+# 🔧Currently available modes
 ### 🎯 Single Mode
 **Fast, simple, and powerful one-point automation.**
 * Auto-click at a target position or live cursor
