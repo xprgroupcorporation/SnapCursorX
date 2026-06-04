@@ -15,10 +15,12 @@ SnapCursorX lets you build, control, and execute. Fast to start. Powerful when y
 Fast & Easy with Visual logic & Markers. Flexible. No Coding. No Complexity.
 
 <div align="center">
-    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235736.png" width="250"/>
-    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235403.png" width="250"/>
-    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235441.png" width="250"/>
-    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235634.png" width="250"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235736.png" width="300"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235403.png" width="300"/>
+</div>
+<div align="center">
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235441.png" width="300"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235634.png" width="300"/>
 </div>
 
 # 🚀 Why SnapCursorX?
@@ -42,10 +44,12 @@ It's designed to bridge the gap between a simple auto-clicker and a full automat
 * Anyone who values speed, control, and flexibility
 
 <div align="center">
-    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-28 122944.png" width="250"/>
-    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235701.png" width="250"/>
-    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-06-04 191143.png" width="250"/>
-    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235648.png" width="250"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-28 122944.png" width="300"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235701.png" width="300"/>
+</div>
+<div align="center">
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-06-04 191143.png" width="300"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235648.png" width="300"/>
 </div>
 
 # 🧠 Features Overview
@@ -67,8 +71,8 @@ Design actions visually, create reusable workflows, and control exactly how your
 * (Planned: Online workflow sharing and community setup hub.👍)
 
 <div align="center">
-    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235336.png" width="250"/>
-    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235528.png" width="250"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235336.png" width="320"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235528.png" width="320"/>
 </div>
 
 ### Currently available modes
