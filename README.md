@@ -44,7 +44,7 @@ It's designed to bridge the gap between a simple auto-clicker and a full automat
 <div align="center">
     <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-28 122944.png" width="230"/>
     <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235701.png" width="230"/>
-    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235441.png" width="230"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-06-04 191143.png" width="230"/>
     <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235648.png" width="230"/>
 </div>
 
