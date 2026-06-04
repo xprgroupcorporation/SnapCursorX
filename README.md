@@ -138,7 +138,9 @@ Includes all core features listed above and is designed to be genuinely useful, 
 More features, larger workflows, and advanced tools for power users.  
 > Future editions help support continued development of SnapCursorX.  
 
+# Documentation
 
+- 📋 [Progress Log](PROGRESS_LOG.md)
 
 ## 
 <h3> 
