@@ -130,8 +130,8 @@ Files from other sources are not officially verified unless mention in this repo
 <tr>
 <td align="center">
 <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot%202026-05-31%20235736.png" width="320"><br>
-<b>v0.4-v0.6.2</b><br>
-<sub>A simple autoclicker menu completed. <br>(Not many feature as today, Not good CPS too.)</sub>
+<b>v0.6.3++</b><br>
+<sub>This is where the project take shape and becoming like today <br>(Also started Github and release to users.)</sub>
 </td>
 
 <td align="center" valign="middle">
@@ -141,8 +141,8 @@ Files from other sources are not officially verified unless mention in this repo
 <td align="center">
 ⬇️<br><br>
 <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot%202026-04-11%20041321.png" width="320"><br>
-<b>v0.6.3++</b><br>
-<sub>This is where the project take shape and becoming like today <br>(Also started Github and release to users.)</sub>
+<b>v0.4-v0.6.2</b><br>
+<sub>A simple autoclicker menu completed. <br>(Not many feature as today, Not good CPS too.)</sub>
 </td>
 </tr>
 </table>
