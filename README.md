@@ -14,6 +14,13 @@ SnapCursorX lets you build, control, and execute. Fast to start. Powerful when y
 **💫 Design Actions Visually**  
 Fast & Easy with Visual logic & Markers. Flexible. No Coding. No Complexity.
 
+<div align="center">
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235736.png" width="230"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235403.png" width="230"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235441.png" width="230"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235634.png" width="230"/>
+</div>
+
 # 🚀 Why SnapCursorX?
 Most auto-clickers focus on one thing:
 Click faster.
@@ -33,6 +40,13 @@ It's designed to bridge the gap between a simple auto-clicker and a full automat
 * Users who outgrow basic auto clickers
 * People who want structured automation without coding
 * Anyone who values speed, control, and flexibility
+
+<div align="center">
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-28 122944.png" width="230"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235701.png" width="230"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235441.png" width="230"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235648.png" width="230"/>
+</div>
 
 # 🧠 Features Overview
 
