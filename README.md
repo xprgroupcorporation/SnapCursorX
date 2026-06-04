@@ -65,7 +65,12 @@ Design actions visually, create reusable workflows, and control exactly how your
 * Stable and reliable runtime system
 * Designed for both beginners and advanced users
 * (Planned: Online workflow sharing and community setup hub.👍)
-  
+
+<div align="center">
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235336.png" width="230"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235528.png" width="230"/>
+</div>
+
 ### Currently available modes
 ### 🎯 Single Mode
 **Fast, simple, and powerful one-point automation.**
