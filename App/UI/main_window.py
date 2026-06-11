@@ -2386,22 +2386,21 @@ class ControlPanel(QtWidgets.QMainWindow):
 
     def _on_update_download_finished(self, downloaded_path: str):
         """Handle successful download completion."""
-        try:
-            if self._update_progress_dialog is not None:
-                self._update_progress_dialog.setValue(100)
-                self._update_progress_dialog.close()
-                self._update_progress_dialog = None
+        if self._update_progress_dialog is not None:
+            self._update_progress_dialog.setValue(100)
+            self._update_progress_dialog.close()
+            self._update_progress_dialog = None
 
-            self._update_download_thread = None
-            self._update_download_worker = None
+        self._update_download_thread = None
+        self._update_download_worker = None
 
-            path = str(downloaded_path or "").strip()
-            if not path:
-                QtWidgets.QMessageBox.warning(self, "Update", "Downloaded update path is empty.")
-                return
+        path = str(downloaded_path or "").strip()
+        if not path:
+            QtWidgets.QMessageBox.warning(self, "Update", "Downloaded update path is empty.")
+            return
 
-            asset_kind = self._active_update_asset_kind
-            self._active_update_asset_kind = ""
+        asset_kind = self._active_update_asset_kind
+        self._active_update_asset_kind = ""
 
         try:
             if asset_kind == "installer" or path.lower().endswith(".msi"):
