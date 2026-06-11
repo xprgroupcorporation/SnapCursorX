@@ -1572,7 +1572,7 @@ class SandboxModeLogicMixin:
         return (
             f"Execute ({keybinds.get('Execute', 'F2')}) • Stop ({keybinds.get('Stop', 'F3')}) • "
             f"Set Pos. ({keybinds.get('Register_Click_Position', 'F4')}) • "
-            f"Info ({keybinds.get('See_Setup_Info', 'F1')}) • +Marker ({keybinds.get('New_Marker_Sandbox', 'F5')}) • "
+            f"Info ({keybinds.get('See_Setup_Info', 'F1')}) • +Marker ({keybinds.get('New_Marker_Sandbox', 'F5')}) •\n"
             f"+Keybind ({keybinds.get('New_Keybind_Sandbox', 'F6')}) • Save ({keybinds.get('Quick_Save', 'F7')}) • "
             f"Toggle Minimize ({keybinds.get('Recover_Window_Position', 'F8')}) • S&Close ({keybinds.get('Save_Close_Setup', 'F9')}) • "
             f"Kill ({keybinds.get('Kill_Switch', 'F10')})"

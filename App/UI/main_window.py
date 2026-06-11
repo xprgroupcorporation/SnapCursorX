@@ -940,10 +940,10 @@ class ControlPanel(QtWidgets.QMainWindow):
         kb = ConfigManager.load().get("keybinds", {})
         self._app_keybind_listener = KeybindListener(
             {
-                "Quick_Save": kb.get("Quick_Save", "F7"),
-                "Recover_Window_Position": kb.get("Recover_Window_Position", "F8"),
-                "Save_Close_Setup": kb.get("Save_Close_Setup", "F9"),
-                "Kill_Switch": kb.get("Kill_Switch", "F10"),
+                "Quick_Save": kb.get("Quick_Save", "CTRL+S"),
+                "Recover_Window_Position": kb.get("Recover_Window_Position", "ALT+Z"),
+                "Save_Close_Setup": kb.get("Save_Close_Setup", "ALT+X"),
+                "Kill_Switch": kb.get("Kill_Switch", "ALT+C"),
             },
             parent=self,
         )
@@ -1245,21 +1245,21 @@ class ControlPanel(QtWidgets.QMainWindow):
         for w in QtWidgets.QApplication.instance().topLevelWidgets():
             if hasattr(w, "_keybind_listener") and hasattr(w, "refresh_keybind_hints"):
                 relevant = {
-                    "Execute":                 new_kb.get("Execute",                 "F1"),
-                    "Stop":                    new_kb.get("Stop",                    "F2"),
-                    "Register_Click_Position": new_kb.get("Register_Click_Position", "F3"),
-                    "See_Setup_Info":          new_kb.get("See_Setup_Info",          "F1"),
+                    "Execute":                 new_kb.get("Execute",                 "CTRL+R"),
+                    "Stop":                    new_kb.get("Stop",                    "CTRL+F"),
+                    "Register_Click_Position": new_kb.get("Register_Click_Position", "ALT+S"),
+                    "See_Setup_Info":          new_kb.get("See_Setup_Info",          "CTRL+I"),
                 }
                 w._keybind_listener.update_keybinds(relevant)
                 w.refresh_keybind_hints(new_kb)
             if hasattr(w, "_setup_keybind_listener"):
                 setup_relevant = {
-                    "Execute": new_kb.get("Execute", "F2"),
-                    "Stop": new_kb.get("Stop", "F3"),
-                    "Register_Click_Position": new_kb.get("Register_Click_Position", "F4"),
-                    "See_Setup_Info": new_kb.get("See_Setup_Info", "F1"),
-                    "New_Marker_Sandbox": new_kb.get("New_Marker_Sandbox", "F5"),
-                    "New_Keybind_Sandbox": new_kb.get("New_Keybind_Sandbox", "F6"),
+                    "Execute": new_kb.get("Execute", "CTRL+R"),
+                    "Stop": new_kb.get("Stop", "CTRL+F"),
+                    "Register_Click_Position": new_kb.get("Register_Click_Position", "ALT+S"),
+                    "See_Setup_Info": new_kb.get("See_Setup_Info", "CTRL+I"),
+                    "New_Marker_Sandbox": new_kb.get("New_Marker_Sandbox", "CTRL+N"),
+                    "New_Keybind_Sandbox": new_kb.get("New_Keybind_Sandbox", "CTRL+M"),
                 }
                 w._setup_keybind_listener.update_keybinds(setup_relevant)
                 if hasattr(w, "_refresh_bottom_bar"):
@@ -1269,10 +1269,10 @@ class ControlPanel(QtWidgets.QMainWindow):
                         pass
             if hasattr(w, "_app_keybind_listener"):
                 app_relevant = {
-                    "Quick_Save": new_kb.get("Quick_Save", "F7"),
-                    "Recover_Window_Position": new_kb.get("Recover_Window_Position", "F8"),
-                    "Save_Close_Setup": new_kb.get("Save_Close_Setup", "F9"),
-                    "Kill_Switch": new_kb.get("Kill_Switch", "F10"),
+                    "Quick_Save": new_kb.get("Quick_Save", "CTRL+S"),
+                    "Recover_Window_Position": new_kb.get("Recover_Window_Position", "ALT+Z"),
+                    "Save_Close_Setup": new_kb.get("Save_Close_Setup", "ALT+X"),
+                    "Kill_Switch": new_kb.get("Kill_Switch", "ALT+C"),
                 }
                 w._app_keybind_listener.update_keybinds(app_relevant)
 
@@ -2188,14 +2188,21 @@ class ControlPanel(QtWidgets.QMainWindow):
         thread.start()
 
     def _on_update_check_finished(self, result: dict):
+        """Handle update check completion with safety checks."""
         result = dict(result or {})
         if result.get("request_id") != self._update_check_request_id:
             return
         self._stop_update_check_timeout()
         self._update_status = result
         self._set_update_button_label(self._update_status)
-        self._update_check_thread = None
-        self._update_check_worker = None
+        # Force cleanup even if thread references are bad
+        try:
+            if self._update_check_thread is not None:
+                self._update_check_thread = None
+            if self._update_check_worker is not None:
+                self._update_check_worker = None
+        except Exception:
+            pass
 
     def _start_update_check_timeout(self, request_id: int):
         self._stop_update_check_timeout()
@@ -2212,22 +2219,37 @@ class ControlPanel(QtWidgets.QMainWindow):
             self._update_check_timeout_timer = None
 
     def _on_update_check_timeout(self, request_id: int):
+        """Handle update check timeout with forced cleanup."""
         if request_id != self._update_check_request_id:
             return
         self._update_check_request_id += 1
+        
+        # Force stop the timeout timer
+        self._stop_update_check_timeout()
+        
+        # Force cleanup stalled thread
+        if self._update_check_thread is not None:
+            try:
+                # Increment request ID to ignore any late responses
+                self._update_check_request_id += 1
+                # Try to quit the thread gracefully
+                self._update_check_thread.quit()
+                self._update_check_thread.wait(1000)  # Wait up to 1 second
+            except Exception:
+                pass
+            finally:
+                self._update_check_thread = None
+                self._update_check_worker = None
+        
         self._update_status = {
             "request_id": self._update_check_request_id,
             "status": "check_failed",
-            "label": "Check your connection and try again.",
+            "label": "Check timed out. Check your connection and try again.",
             "latest_version": parse_numeric_version_text(AppConfig.VERSION),
             "release_page_url": UPDATE_RELEASE_PAGE_URL,
             "assets": {},
         }
         self._set_update_button_label(self._update_status)
-        if self._update_check_thread is not None:
-            self._stale_update_check_threads.append((self._update_check_thread, self._update_check_worker))
-        self._update_check_thread = None
-        self._update_check_worker = None
         self._stop_update_check_timeout()
 
     def _forget_stale_update_check_thread(self, thread):
@@ -2363,21 +2385,23 @@ class ControlPanel(QtWidgets.QMainWindow):
         thread.start()
 
     def _on_update_download_finished(self, downloaded_path: str):
-        if self._update_progress_dialog is not None:
-            self._update_progress_dialog.setValue(100)
-            self._update_progress_dialog.close()
-            self._update_progress_dialog = None
+        """Handle successful download completion."""
+        try:
+            if self._update_progress_dialog is not None:
+                self._update_progress_dialog.setValue(100)
+                self._update_progress_dialog.close()
+                self._update_progress_dialog = None
 
-        self._update_download_thread = None
-        self._update_download_worker = None
+            self._update_download_thread = None
+            self._update_download_worker = None
 
-        path = str(downloaded_path or "").strip()
-        if not path:
-            QtWidgets.QMessageBox.warning(self, "Update", "Downloaded update path is empty.")
-            return
+            path = str(downloaded_path or "").strip()
+            if not path:
+                QtWidgets.QMessageBox.warning(self, "Update", "Downloaded update path is empty.")
+                return
 
-        asset_kind = self._active_update_asset_kind
-        self._active_update_asset_kind = ""
+            asset_kind = self._active_update_asset_kind
+            self._active_update_asset_kind = ""
 
         try:
             if asset_kind == "installer" or path.lower().endswith(".msi"):
@@ -2437,17 +2461,26 @@ class ControlPanel(QtWidgets.QMainWindow):
             return
 
     def _on_update_download_failed(self, message: str):
-        if self._update_progress_dialog is not None:
-            self._update_progress_dialog.close()
-            self._update_progress_dialog = None
-        self._update_download_thread = None
-        self._update_download_worker = None
-        self._active_update_asset_kind = ""
+        """Handle download failure with proper cleanup and error display."""
+        try:
+            if self._update_progress_dialog is not None:
+                self._update_progress_dialog.close()
+                self._update_progress_dialog = None
+            self._update_download_thread = None
+            self._update_download_worker = None
+        except Exception:
+            pass
+        finally:
+            self._active_update_asset_kind = ""
+        
+        # Show detailed error message
+        error_msg = str(message or "Unknown error").strip()
         QtWidgets.QMessageBox.warning(
             self,
-            "Update",
-            "Download failed.\n check your internet connection and try again or redownload from our github that listed in about & credit page.\n\n"
-            f"Details: {message}",
+            "Update Download Failed",
+            "Download failed - please check your internet connection and try again.\n\n"
+            "You can also download directly from our GitHub page (see About & Credits).\n\n"
+            f"Error: {error_msg}",
         )
     
     def moveEvent(self, event):

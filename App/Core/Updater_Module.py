@@ -1,11 +1,16 @@
 import json
+import logging
 import re
+import sys
 import tempfile
+import traceback
 import urllib.error
 import urllib.request
 from pathlib import Path
 
 from PySide6 import QtCore
+
+logger = logging.getLogger(__name__)
 
 
 def parse_numeric_version_text(raw_version: str) -> str:
@@ -40,14 +45,18 @@ class UpdateCheckWorker(QtCore.QObject):
         self._request_id = int(request_id)
 
     def run(self):
+        """Run the update check with comprehensive error handling."""
+        result = None
         try:
             if not self._has_internet():
-                self.finished.emit(self._failure_result())
+                result = self._failure_result("No internet connection")
+                self._emit_finished(result)
                 return
 
             release_data = self._load_release_data()
             if not release_data:
-                self.finished.emit(self._failure_result())
+                result = self._failure_result("Could not fetch release data")
+                self._emit_finished(result)
                 return
 
             latest_version = self._resolve_latest_version(release_data)
@@ -59,26 +68,38 @@ class UpdateCheckWorker(QtCore.QObject):
             )
 
             if latest_version and compare_versions(latest_version, self._current_version) > 0:
-                self.finished.emit({
+                result = {
                     "request_id": self._request_id,
                     "status": "update_available",
                     "label": f"New Update!\nVer{latest_version}",
                     "latest_version": latest_version,
                     "release_page_url": release_page_url,
                     "assets": assets,
-                })
+                }
+                self._emit_finished(result)
                 return
 
-            self.finished.emit({
+            result = {
                 "request_id": self._request_id,
                 "status": "latest",
                 "label": "(Latest ver)",
                 "latest_version": latest_version or self._current_version,
                 "release_page_url": release_page_url,
                 "assets": assets,
-            })
+            }
+            self._emit_finished(result)
         except Exception as exc:
-            self.finished.emit(self._failure_result(str(exc).strip() or exc.__class__.__name__))
+            error_msg = str(exc).strip() or exc.__class__.__name__
+            logger.error(f"Update check failed: {error_msg}", exc_info=True)
+            result = self._failure_result(error_msg)
+            self._emit_finished(result)
+    
+    def _emit_finished(self, result: dict):
+        """Safely emit finished signal with exception handling."""
+        try:
+            self.finished.emit(result)
+        except Exception as exc:
+            logger.error(f"Failed to emit finished signal: {exc}", exc_info=True)
 
     def _failure_result(self, detail: str = "") -> dict:
         label = "Check your connection and try again."
@@ -125,15 +146,24 @@ class UpdateCheckWorker(QtCore.QObject):
             raise RuntimeError(str(exc).strip() or exc.__class__.__name__) from exc
 
     def _request_json(self, url: str):
-        request = urllib.request.Request(
-            url,
-            headers={
-                "Accept": "application/vnd.github+json",
-                "User-Agent": "SnapCursorX-UpdateChecker",
-            },
-        )
-        with urllib.request.urlopen(request, timeout=6) as response:
-            return json.loads(response.read().decode("utf-8"))
+        """Fetch JSON from URL with detailed error handling."""
+        try:
+            request = urllib.request.Request(
+                url,
+                headers={
+                    "Accept": "application/vnd.github+json",
+                    "User-Agent": "SnapCursorX-UpdateChecker",
+                },
+            )
+            with urllib.request.urlopen(request, timeout=6) as response:
+                content = response.read().decode("utf-8")
+                return json.loads(content)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(f"Invalid JSON response: {exc}") from exc
+        except urllib.error.URLError as exc:
+            raise RuntimeError(f"Network error: {exc}") from exc
+        except urllib.error.HTTPError as exc:
+            raise RuntimeError(f"HTTP error {exc.code}: {exc.reason}") from exc
 
     def _extract_assets(self, assets: list[dict]):
         result = {}
@@ -180,6 +210,7 @@ class UpdateDownloadWorker(QtCore.QObject):
         self._target_dir = str(target_dir or "").strip()
 
     def run(self):
+        """Run the download with comprehensive error handling."""
         try:
             if self._target_dir:
                 download_dir = Path(self._target_dir)
@@ -204,9 +235,32 @@ class UpdateDownloadWorker(QtCore.QObject):
                         downloaded += len(chunk)
                         if total_size > 0:
                             percent = max(0, min(100, int(downloaded * 100 / total_size)))
-                            self.progress.emit(percent)
+                            self._emit_progress(percent)
 
-            self.progress.emit(100)
-            self.finished.emit(str(target_path))
+            self._emit_progress(100)
+            self._emit_finished(str(target_path))
         except Exception as exc:
-            self.failed.emit(str(exc).strip() or exc.__class__.__name__)
+            error_msg = str(exc).strip() or exc.__class__.__name__
+            logger.error(f"Download failed: {error_msg}", exc_info=True)
+            self._emit_failed(error_msg)
+    
+    def _emit_progress(self, value: int):
+        """Safely emit progress signal."""
+        try:
+            self.progress.emit(value)
+        except Exception as exc:
+            logger.error(f"Failed to emit progress signal: {exc}", exc_info=True)
+    
+    def _emit_finished(self, path: str):
+        """Safely emit finished signal."""
+        try:
+            self.finished.emit(path)
+        except Exception as exc:
+            logger.error(f"Failed to emit finished signal: {exc}", exc_info=True)
+    
+    def _emit_failed(self, error: str):
+        """Safely emit failed signal."""
+        try:
+            self.failed.emit(error)
+        except Exception as exc:
+            logger.error(f"Failed to emit failed signal: {exc}", exc_info=True)
