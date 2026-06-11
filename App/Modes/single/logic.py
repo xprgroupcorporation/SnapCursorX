@@ -1001,77 +1001,126 @@ class SingleModeLogicMixin:
             QtCore.QTimer.singleShot(4000, lambda: self._set_status(""))
 
     def _on_stop(self, force: bool = False):
-        if not self._executing:
-            return
-        if (not force) and self._button_debounce_active():
-            return
-        self._start_button_debounce()
-        self._stop_btn.setEnabled(False)
-        self._set_status("Stopping…", "#ffb86c")
-        self._play_system_sound("SystemExclamation", 720)
-        self._stop_sound_played = True
-        self._stop_failsafe_monitor()
-        self._clear_pointer_cursor_lock()
-        if self._worker:
-            self._worker.stop()
-        else:
-            self._on_worker_stopped()
+        try:
+            if not self._executing:
+                return
+            if (not force) and self._button_debounce_active():
+                return
+            self._start_button_debounce()
+            self._stop_btn.setEnabled(False)
+            self._set_status("Stopping…", "#ffb86c")
+            try:
+                self._play_system_sound("SystemExclamation", 720)
+            except Exception as e:
+                print(f"[SOUND ERROR] Failed to play stop sound: {e}")
+            self._stop_sound_played = True
+            try:
+                self._stop_failsafe_monitor()
+            except Exception as e:
+                print(f"[FAILSAFE ERROR] Failed to stop failsafe monitor: {e}")
+            try:
+                self._clear_pointer_cursor_lock()
+            except Exception as e:
+                print(f"[CURSOR ERROR] Failed to clear cursor lock: {e}")
+            if self._worker:
+                try:
+                    self._worker.stop()
+                except Exception as e:
+                    print(f"[WORKER ERROR] Failed to stop worker: {e}")
+            else:
+                self._on_worker_stopped()
+        except Exception as e:
+            print(f"[STOP ERROR] Unhandled exception in _on_stop: {e}")
+            import traceback
+            traceback.print_exc()
 
     def _on_worker_stopped(self):
-        self._executing = False
-        self._worker    = None
-        self._stop_failsafe_monitor()
-        self._clear_pointer_cursor_lock()
+        try:
+            self._executing = False
+            self._worker    = None
+            try:
+                self._stop_failsafe_monitor()
+            except Exception as e:
+                print(f"[FAILSAFE ERROR] Failed to stop failsafe in _on_worker_stopped: {e}")
+            try:
+                self._clear_pointer_cursor_lock()
+            except Exception as e:
+                print(f"[CURSOR ERROR] Failed to clear cursor lock in _on_worker_stopped: {e}")
 
-        # Remove active file
-        ActiveSetupManager.clear(self.data.get("name", "setup"))
+            # Remove active file
+            try:
+                ActiveSetupManager.clear(self.data.get("name", "setup"))
+            except Exception as e:
+                print(f"[SETUP ERROR] Failed to clear active setup: {e}")
 
-        self._exec_btn.setEnabled(True)
-        self._stop_btn.setEnabled(False)
-        self._delay_spin.setEnabled(True)
-        if hasattr(self, "_timing_card"):
-            self._timing_card.setEnabled(True)
-        self._hold_spin.setEnabled(True)
-        self._anti_check.setEnabled(True)
-        if hasattr(self, "_click_target_card"):
-            self._click_target_card.setEnabled(True)
-        for widget_name in ("_follow_mode_btn", "_marker_mode_btn", "_pointer_mode_btn"):
-            widget = getattr(self, widget_name, None)
-            if widget is not None:
-                widget.setEnabled(True)
-        self._info_btn.setEnabled(True)
-        self._repeat_times_check.setEnabled(True)
-        self._repeat_timer_check.setEnabled(True)
-        self._until_stop_check.setEnabled(True)
-        self._repeat_times_edit_btn.setEnabled(True)
-        self._repeat_timer_edit_btn.setEnabled(True)
-        self._mouse_button_combo.setEnabled(True)
-        self._failsafe_edit_btn.setEnabled(True)
-        if self._progress_timer:
-            self._progress_timer.stop()
-        if not self._stop_sound_played:
-            self._play_system_sound("SystemExclamation", 720)
-        self._execution_started_at = None
-        self._execution_duration_seconds = 0
-        self._execution_estimated_cps = 0.0
-        self._native_poll_last_count = None
-        self._native_poll_last_time = None
-        self._stop_sound_played = False
-        if self._pending_stop_message:
-            text, color = self._pending_stop_message
-            self._set_status(text, color)
-            QtCore.QTimer.singleShot(4000, lambda: self._set_status("") if not self._executing else None)
-            self._pending_stop_message = None
-        else:
-            self._set_status("")
+            self._exec_btn.setEnabled(True)
+            self._stop_btn.setEnabled(False)
+            self._delay_spin.setEnabled(True)
+            if hasattr(self, "_timing_card"):
+                self._timing_card.setEnabled(True)
+            self._hold_spin.setEnabled(True)
+            self._anti_check.setEnabled(True)
+            if hasattr(self, "_click_target_card"):
+                self._click_target_card.setEnabled(True)
+            for widget_name in ("_follow_mode_btn", "_marker_mode_btn", "_pointer_mode_btn"):
+                try:
+                    widget = getattr(self, widget_name, None)
+                    if widget is not None:
+                        widget.setEnabled(True)
+                except Exception as e:
+                    print(f"[UI ERROR] Failed to enable {widget_name}: {e}")
+            self._info_btn.setEnabled(True)
+            self._repeat_times_check.setEnabled(True)
+            self._repeat_timer_check.setEnabled(True)
+            self._until_stop_check.setEnabled(True)
+            self._repeat_times_edit_btn.setEnabled(True)
+            self._repeat_timer_edit_btn.setEnabled(True)
+            self._mouse_button_combo.setEnabled(True)
+            self._failsafe_edit_btn.setEnabled(True)
+            if self._progress_timer:
+                try:
+                    self._progress_timer.stop()
+                except Exception as e:
+                    print(f"[TIMER ERROR] Failed to stop progress timer: {e}")
+            if not self._stop_sound_played:
+                try:
+                    self._play_system_sound("SystemExclamation", 720)
+                except Exception as e:
+                    print(f"[SOUND ERROR] Failed to play end sound: {e}")
+            self._execution_started_at = None
+            self._execution_duration_seconds = 0
+            self._execution_estimated_cps = 0.0
+            self._native_poll_last_count = None
+            self._native_poll_last_time = None
+            self._stop_sound_played = False
+            if self._pending_stop_message:
+                text, color = self._pending_stop_message
+                self._set_status(text, color)
+                QtCore.QTimer.singleShot(4000, lambda: self._set_status("") if not self._executing else None)
+                self._pending_stop_message = None
+            else:
+                self._set_status("")
 
-        # Restore marker
-        overlay = self._get_overlay()
-        if overlay:
-            overlay.set_marker_execution_mode(False, keep_visible=False)
-            overlay.hide_position_indicator()
-        self._update_follow_mouse_state()
-        self._sync_ui()
+            # Restore marker
+            try:
+                overlay = self._get_overlay()
+                if overlay:
+                    overlay.set_marker_execution_mode(False, keep_visible=False)
+                    overlay.hide_position_indicator()
+            except Exception as e:
+                print(f"[OVERLAY ERROR] Failed to restore marker: {e}")
+            try:
+                self._update_follow_mouse_state()
+            except Exception as e:
+                print(f"[FOLLOW MOUSE ERROR] Failed to update follow mouse state: {e}")
+            try:
+                self._sync_ui()
+            except Exception as e:
+                print(f"[SYNC ERROR] Failed to sync UI: {e}")
+        except Exception as e:
+            print(f"[WORKER STOPPED ERROR] Unhandled exception in _on_worker_stopped: {e}")
+            import traceback
+            traceback.print_exc()
 
     def closeEvent(self, event):
         if not getattr(self, "_closing", False):

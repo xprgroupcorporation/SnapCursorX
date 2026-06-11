@@ -36,10 +36,23 @@ def _configure_windows_dpi():
         pass
 
 def handle_exception(exc_type, exc_value, exc_traceback):
+    """Global exception handler - prevents crashes from propagating."""
     print("\n=== UNCAUGHT EXCEPTION ===")
     traceback.print_exception(exc_type, exc_value, exc_traceback)
+    # Don't re-raise - let app continue running
 
 sys.excepthook = handle_exception
+
+
+def _install_qt_error_handler():
+    """Install handler for Qt signal/slot exceptions."""
+    original_excepthook = sys.excepthook
+    
+    def qt_excepthook(exc_type, exc_value, exc_traceback):
+        print(f"\n[Qt Exception] {exc_type.__name__}: {exc_value}")
+        traceback.print_exception(exc_type, exc_value, exc_traceback)
+    
+    sys.excepthook = qt_excepthook
 
 
 def _show_already_running_warning():
@@ -60,10 +73,24 @@ def _show_already_running_warning():
 
 def main():
     _configure_windows_dpi()
+    _install_qt_error_handler()
+    
     from Loading import LoadingWindow
     from UI.components.animations import WindowAnimator
 
     app = QtWidgets.QApplication(sys.argv)
+    
+    # Install exception handler for this thread's QApplication
+    old_hook = sys.excepthook
+    
+    def safe_exec():
+        try:
+            return app.exec()
+        except Exception as e:
+            print(f"[CRASH PROTECTION] App exception caught and suppressed: {e}")
+            traceback.print_exc()
+            return 1
+    
     single_instance_mutex = win32event.CreateMutex(
         None,
         True,
@@ -84,8 +111,12 @@ def main():
     def preload_control_panel_class():
         if state["control_class"] is not None:
             return
-        from UI.main_window import ControlPanel
-        state["control_class"] = ControlPanel
+        try:
+            from UI.main_window import ControlPanel
+            state["control_class"] = ControlPanel
+        except Exception as e:
+            print(f"[ERROR] Failed to preload ControlPanel: {e}")
+            traceback.print_exc()
 
     def open_control_panel():
         if state["control"] is not None or state["opening_control"]:
@@ -94,6 +125,10 @@ def main():
 
         try:
             preload_control_panel_class()
+            if state["control_class"] is None:
+                print("[ERROR] ControlPanel class failed to load")
+                return
+            
             control = state["control_class"]()
             control.setWindowIcon(icon)
 
@@ -113,17 +148,25 @@ def main():
             WindowAnimator.fade_in(control, duration=200)
             WindowAnimator.slide(control, start_pos, end_pos, duration=200)
             state["control"] = control
+        except Exception as e:
+            print(f"[ERROR] Failed to open control panel: {e}")
+            traceback.print_exc()
         finally:
             state["opening_control"] = False
 
-    loading = LoadingWindow(startup_delay_ms=550)
-    loading.setWindowIcon(icon)
-    loading.startup_ready.connect(lambda: QtCore.QTimer.singleShot(250, open_control_panel))
-    loading.show()
-    state["loading"] = loading
-    QtCore.QTimer.singleShot(0, preload_control_panel_class)
+    try:
+        loading = LoadingWindow(startup_delay_ms=550)
+        loading.setWindowIcon(icon)
+        loading.startup_ready.connect(lambda: QtCore.QTimer.singleShot(250, open_control_panel))
+        loading.show()
+        state["loading"] = loading
+        QtCore.QTimer.singleShot(0, preload_control_panel_class)
+    except Exception as e:
+        print(f"[ERROR] Failed to create loading window: {e}")
+        traceback.print_exc()
+        return 1
 
-    return app.exec()
+    return safe_exec()
 
 
 if __name__ == "__main__":

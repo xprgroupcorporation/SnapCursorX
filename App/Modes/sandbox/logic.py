@@ -2245,37 +2245,76 @@ class SandboxModeLogicMixin:
         self._set_status("Sandbox armed")
 
     def _on_stop(self):
-        if not self._executing:
-            return
-        self._play_system_sound("SystemExclamation", 720)
-        self._set_status("Stopping...")
-        if self._runtime_keybind_listener:
-            self._runtime_keybind_listener.stop()
-            self._runtime_keybind_listener.deleteLater()
-            self._runtime_keybind_listener = None
-        if self._worker:
-            self._worker.stop()
-        else:
-            self._on_worker_stopped()
+        try:
+            if not self._executing:
+                return
+            try:
+                self._play_system_sound("SystemExclamation", 720)
+            except Exception as e:
+                print(f"[SOUND ERROR] Failed to play stop sound: {e}")
+            self._set_status("Stopping...")
+            if self._runtime_keybind_listener:
+                try:
+                    self._runtime_keybind_listener.stop()
+                    self._runtime_keybind_listener.deleteLater()
+                except Exception as e:
+                    print(f"[KEYBIND ERROR] Failed to stop keybind listener: {e}")
+                finally:
+                    self._runtime_keybind_listener = None
+            if self._worker:
+                try:
+                    self._worker.stop()
+                except Exception as e:
+                    print(f"[WORKER ERROR] Failed to stop worker: {e}")
+            else:
+                self._on_worker_stopped()
+        except Exception as e:
+            print(f"[STOP ERROR] Unhandled exception in _on_stop: {e}")
+            import traceback
+            traceback.print_exc()
 
     def _on_worker_stopped(self):
-        self._executing = False
-        if self._runtime_keybind_listener:
-            self._runtime_keybind_listener.stop()
-            self._runtime_keybind_listener.deleteLater()
-            self._runtime_keybind_listener = None
-        self._worker = None
-        if self._progress_timer:
-            self._progress_timer.stop()
-        self._set_execution_ui_locked(False)
-        self._active_execute_target_id = ""
-        ActiveSetupManager.clear(self.data.get("name", "setup"))
-        overlay = self._find_shared_overlay()
-        if overlay:
-            overlay.set_marker_execution_mode(False, keep_visible=False)
-        self._set_selected_node(self._pre_execute_selected_id, refresh_properties=True)
-        self._set_status("Stopped")
-        self._refresh_all()
+        try:
+            self._executing = False
+            if self._runtime_keybind_listener:
+                try:
+                    self._runtime_keybind_listener.stop()
+                    self._runtime_keybind_listener.deleteLater()
+                except Exception as e:
+                    print(f"[KEYBIND ERROR] Failed to clean up keybind listener: {e}")
+                finally:
+                    self._runtime_keybind_listener = None
+            self._worker = None
+            if self._progress_timer:
+                try:
+                    self._progress_timer.stop()
+                except Exception as e:
+                    print(f"[TIMER ERROR] Failed to stop progress timer: {e}")
+            self._set_execution_ui_locked(False)
+            self._active_execute_target_id = ""
+            try:
+                ActiveSetupManager.clear(self.data.get("name", "setup"))
+            except Exception as e:
+                print(f"[SETUP ERROR] Failed to clear active setup: {e}")
+            try:
+                overlay = self._find_shared_overlay()
+                if overlay:
+                    overlay.set_marker_execution_mode(False, keep_visible=False)
+            except Exception as e:
+                print(f"[OVERLAY ERROR] Failed to restore overlay: {e}")
+            try:
+                self._set_selected_node(self._pre_execute_selected_id, refresh_properties=True)
+            except Exception as e:
+                print(f"[SELECTION ERROR] Failed to restore selection: {e}")
+            self._set_status("Stopped")
+            try:
+                self._refresh_all()
+            except Exception as e:
+                print(f"[REFRESH ERROR] Failed to refresh UI: {e}")
+        except Exception as e:
+            print(f"[WORKER STOPPED ERROR] Unhandled exception in _on_worker_stopped: {e}")
+            import traceback
+            traceback.print_exc()
 
     def _on_runtime_keybind(self, node_id: str):
         if self._worker and node_id in self._node_map():
