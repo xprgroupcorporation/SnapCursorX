@@ -24,11 +24,10 @@ Fast & Easy with Visual logic & Markers. Flexible. No Coding. No Complexity.
 </div>
 
 # 🚀 Why SnapCursorX?
-Most auto-clickers focus on one thing:
-Click faster.
-**But SnapCursorX focuses on control.**
+Most auto-clickers focus on one thing: Click faster.  
+**But SnapCursorX focuses on control.**  
 Instead of repeatedly clicking one location, you can build reusable workflows,  
-trigger actions with keybinds, organize logic visually, and customize nearly every aspect of execution.
+Trigger actions with keybinds, organize logic visually, and customize nearly every aspect of execution.  
 It's designed to bridge the gap between a simple auto-clicker and a full automation tool.
 
 💖 **Key Highlights:**
@@ -75,7 +74,7 @@ Design actions visually, create reusable workflows, and control exactly how your
     <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235528.png" width="320"/>
 </div>
 
-### Currently available modes
+# 🔧Currently available modes
 ### 🎯 Single Mode
 **Fast, simple, and powerful one-point automation.**
 * Auto-click at a target position or live cursor
@@ -105,20 +104,57 @@ Design actions visually, create reusable workflows, and control exactly how your
 * No data collection or tracking & No hidden background processes
 * Internet access is only used to check for updates from the official GitHub repository.
 For security, only download SnapCursorX from this official GitHub repository.  
-Files from other sources are not officially verified unless mention in this repository.  
+Files from other sources are not officially verified unless mention in this repository.
+
+# ⏫ Evolution History
+
+<table>
+<tr>
+<td align="center">
+<img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot%202026-04-07%20204648.png" width="320"><br>
+<b>v0.0-v0.1</b><br>
+<sub>It's all start just like this. <br>(No Github record yet.)</sub>
+</td>
+
+<td align="center" valign="middle">
+➡️
+</td>
+
+<td align="center">
+<img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot%202026-04-07%20225643.png" width="320"><br>
+<b>v0.2-v0.3</b><br>
+<sub>A better look and ts is not a virus 💀🙏 <br>(A bit broken tho.)</sub>
+</td>
+</tr>
+
+<tr>
+<td align="center">
+<img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot%202026-05-31%20235736.png" width="320"><br>
+<b>v0.6.3++</b><br>
+<sub>This is where the project take shape and becoming like today <br>(Also started Github and release to users.)</sub>
+</td>
+
+<td align="center" valign="middle">
+⬅️
+</td>
+
+<td align="center">
+⬇️<br><br>
+<img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot%202026-04-11%20041321.png" width="320"><br>
+<b>v0.4-v0.6.2</b><br>
+<sub>A simple autoclicker menu completed. <br>(Not many feature as today, Not good CPS too.)</sub>
+</td>
+</tr>
+</table>
 
 # 🚧 Development Status
 
 SnapCursorX is actively evolving based on community feedback.  
-
-Current Features:  
-✅ Single Mode & Sandbox Mode  
-✅ Setup Management  
-✅ Auto Update System  
+Current Features All Listed.
 
 Future Direction:  
 🔜 Input Recorder  
-🔜 Keyboard Actions  
+🔜 Keyboard Input Actions  
 🔜 Pixel & Screen Detection  
 🔜 Multi-Setup Execution  
 🔜 Workflow Sharing  
@@ -136,9 +172,7 @@ Includes all core features listed above and is designed to be genuinely useful, 
 
 ### 🔓 Full Edition (Planned)
 More features, larger workflows, and advanced tools for power users.  
-> Future editions help support continued development of SnapCursorX.  
-
-
+> Future editions help support continued development of SnapCursorX.
 
 ## 
 <h3> 
