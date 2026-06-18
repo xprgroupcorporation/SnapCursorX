@@ -1,0 +1,11 @@
+﻿debugpy==1.8.20
+MouseInfo==0.1.3
+PyAutoGUI==0.9.54
+PyGetWindow==0.0.9
+PyMsgBox==2.0.1
+pyperclip==1.11.0
+PySide6>=6.9,<7
+PyRect==0.2.0
+PyScreeze==1.0.1
+pytweening==1.2.0
+pywin32==311

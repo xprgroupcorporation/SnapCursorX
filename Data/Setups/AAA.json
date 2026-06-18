@@ -1,0 +1,44 @@
+{
+    "name": "AAA",
+    "mode": "single",
+    "data": {},
+    "position": {
+        "x": 1064,
+        "y": 533
+    },
+    "settings": {
+        "click_delay_ms": 2,
+        "always_follow_mouse": true,
+        "mouse_hold_ms": 10,
+        "repeat_times_target": 40,
+        "repeat_timer_seconds": 60,
+        "repeat_mode": "until_stop",
+        "mouse_button": "left",
+        "click_randomness": false,
+        "cycle": {
+            "value": 2,
+            "unit": "ms"
+        },
+        "frequency": {
+            "value": 500,
+            "unit": "CPS"
+        },
+        "click_mode": "cycle",
+        "click_target_mode": "follow",
+        "follow_position": {
+            "x": 1064,
+            "y": 533
+        },
+        "fixed_position": {
+            "x": 624,
+            "y": 517
+        }
+    },
+    "failsafe": {
+        "enabled": true,
+        "top_px": 50,
+        "bottom_px": 50,
+        "left_px": 50,
+        "right_px": 50
+    }
+}
