@@ -1,3 +1,5 @@
+# __Real Public Release Ignore__
+
 # Python cache
 __pycache__/
 *.pyc
@@ -37,3 +39,4 @@ __Installer_Output/
 # Local user setup data
 Data/Setups/*.json
 Data/Active/*.json
+Z_gitignoreSaves/
