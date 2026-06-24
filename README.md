@@ -6,14 +6,31 @@
 [![GitHub stars](https://img.shields.io/github/stars/xprgroupcorporation/SnapCursorX?style=for-the-badge)](https://github.com/xprgroupcorporation/SnapCursorX/stargazers)  
 (Currently Only for Windows OS)
 
-# 🟣 SnapCursorX
-**⚖️ Command Every Movement**  
-We go beyond just basic auto clickers. From simple clicks to full workflow control.  
-SnapCursorX lets you build, control, and execute. Fast to start. Powerful when you need it.
+# SnapCursorX
+**Visual Cursor Automation Platform for Windows**  
+SnapCursorX started as a solution to a repetitive problem I faced while gaming. Existing automation tools were  either too limited, too complex, or relied heavily on scripting, so I decided to build my own.  
 
-**💫 Design Actions Visually**  
-Fast & Easy with Visual logic & Markers. Flexible. No Coding. No Complexity.
+What began as a simple personal project has evolved into a visual desktop automation platform focused on  flexibility, speed, and ease of use-making advanced cursor automation accessible without writing a single line of code.
 
+# 🚀 Download
+Download the latest release from the Releases page.  
+**Platform: Windows 10 / 11 (64-bit)**  
+[![Download](https://img.shields.io/badge/SnapCursorX-Download_Now-purple?style=for-the-badge)](https://github.com/xprgroupcorporation/SnapCursorX/releases)  
+
+# Why SnapCursorX?
+
+Most automation tools fall into one of three categories:  
+* Simple auto-clickers with limited functionality
+* Macro recorders that are difficult to edit single point
+* Script-based automation requiring programming knowledge  
+
+SnapCursorX takes a different approach.  
+
+Instead of recording or scripting everything, you visually build reusable cursor workflows, organize actions with markers, save multiple setups, and execute them instantly using global hotkeys.  
+
+Whether you need a simple auto-clicker or a complex automation workflow, SnapCursorX scales with your needs.  
+
+# 📸 Screenshots
 <div align="center">
     <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235736.png" width="300"/>
     <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235403.png" width="300"/>
@@ -23,24 +40,10 @@ Fast & Easy with Visual logic & Markers. Flexible. No Coding. No Complexity.
     <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235634.png" width="300"/>
 </div>
 
-# 🚀 Why SnapCursorX?
-Most auto-clickers focus on one thing: Click faster.  
-**But SnapCursorX focuses on control.**  
-Instead of repeatedly clicking one location, you can build reusable workflows,  
-Trigger actions with keybinds, organize logic visually, and customize nearly every aspect of execution.  
-It's designed to bridge the gap between a simple auto-clicker and a full automation tool.
-
-💖 **Key Highlights:**
-* Build workflows quickly. no restrictions, no delay, no limit on creating.
-* Designed to feel clean, modern, and fast.
-* Includes a simple and powerful auto-clicker mode.
-* Create once, reuse anytime with setup system. Just save & load.
-* Auto Update System, no need to worry for missing out.
-
-💡 **Who This Is For?**
-* Users who outgrow basic auto clickers
-* People who want structured automation without coding
-* Anyone who values speed, control, and flexibility
+* Main Interface
+* Sandbox Mode
+* Workflow Editor
+* Marker Visual
 
 <div align="center">
     <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-28 122944.png" width="300"/>
@@ -51,16 +54,26 @@ It's designed to bridge the gap between a simple auto-clicker and a full automat
     <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235648.png" width="300"/>
 </div>
 
-# 🧠 Features Overview
+* Update App Menu
+* New Setup
+* Load Setup
+* Settings Menu
 
-SnapCursorX is a visual cursor automation platform built for users who need more than a basic auto-clicker.
-Design actions visually, create reusable workflows, and control exactly how your cursor behaves across different tasks, applications, and games.
+<div align="center">
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235336.png" width="320"/>
+    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235528.png" width="320"/>
+</div>
 
+* EZ to use, Failsafe Set
+* Keybinding Example
+
+# ✨ Core Features
 ### 🌟 Shared Features
 * Modern and Self-Explanatory interface
 * Create once, reuse anytime with setup system. Just save & load.
 * Highly customizable behavior and execution settings
 * Real-time execution feedback
+* Unlimited automation points
 * Built-in safety and failsafe systems
 * Click Randomness for more natural execution
 * Works across different applications and workflows
@@ -69,10 +82,6 @@ Design actions visually, create reusable workflows, and control exactly how your
 * Designed for both beginners and advanced users
 * (Planned: Online workflow sharing and community setup hub.👍)
 
-<div align="center">
-    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235336.png" width="320"/>
-    <img src="https://github.com/xprgroupcorporation/SnapCursorX/blob/main/Pic_for_Github/Screenshot 2026-05-31 235528.png" width="320"/>
-</div>
 
 # 🔧Currently available modes
 ### 🎯 Single Mode
@@ -101,13 +110,17 @@ Design actions visually, create reusable workflows, and control exactly how your
 > Not just clicking. You're building your own automation logic.
 
 # 🔐 Security & Safety
-* No data collection or tracking & No hidden background processes
-* Internet access is only used to check for updates from the official GitHub repository.
-For security, only download SnapCursorX from this official GitHub repository.  
-Files from other sources are not officially verified unless mention in this repository.
+SnapCursorX does not collect personal data, telemetry, or usage analytics.  
+
+Internet access is only used to check for updates from the official GitHub repository.  
+
+For your safety, only download SnapCursorX from this repository. Files distributed elsewhere cannot be verified by XPR Group Corporation.  
 
 # ⏫ Evolution History
+SnapCursorX has gone through multiple redesigns, gradually evolving from a simple personal utility into a fully featured desktop application.  
 
+Each version improved the user experience, architecture, and flexibility while introducing new automation capabilities.  
+ 
 <table>
 <tr>
 <td align="center">
@@ -165,14 +178,27 @@ Future Direction:
 > Features are added based on development progress, community feedback, and project sustainability.  
 > We are a small team, and every download, bug report, suggestion, star, and future purchase helps shape the future of SnapCursorX.
 
-# 🚀 Editions
+# 💼 Editions
 ### 🔒 Starter Edition (Free)
-The current public release of SnapCursorX.  
+Free for personal use.  
 Includes all core features listed above and is designed to be genuinely useful, not just a limited demo.  
 
 ### 🔓 Full Edition (Planned)
 More features, larger workflows, and advanced tools for power users.  
 > Future editions help support continued development of SnapCursorX.
+
+# ❤️ Support the Project
+
+If you find SnapCursorX useful:  
+* ⭐ Star the repository
+* 🐞 Report bugs
+* 💡 Suggest new features
+* 🤝 Share it with others
+Your feedback helps shape future releases.  
+
+# 📄 License
+This project is licensed under the XCSL License.  
+See the LICENSE file for details.
 
 ## 
 <h3> 
