@@ -15,6 +15,7 @@ What began as a simple personal project has evolved into a visual desktop automa
 # 🚀 Download
 Download the latest release from the Releases page.  
 **Platform: Windows 10 / 11 (64-bit)**  
+
 [![Download](https://img.shields.io/badge/SnapCursorX-Download_Now-purple?style=for-the-badge)](https://github.com/xprgroupcorporation/SnapCursorX/releases)  
 
 # Why SnapCursorX?
