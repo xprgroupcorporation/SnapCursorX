@@ -8,6 +8,7 @@ from ctypes import wintypes
 import random
 import time
 import copy
+import logging
 import re
 import winsound
 import queue
@@ -220,6 +221,7 @@ def atomic_json_write(path, data):
 
 UPDATE_RELEASE_API_URL = AppConfig.UPDATE_RELEASE_API_URL
 UPDATE_RELEASE_PAGE_URL = AppConfig.UPDATE_RELEASE_PAGE_URL
+logger = logging.getLogger(__name__)
 
 
 def make_noactivate_topmost(widget):
@@ -358,8 +360,12 @@ def read_starter_click_randomness(source, default=True):
 
 
 class KeybindCaptureDialog(QtWidgets.QDialog):
+    _capture_active = False
+
     def __init__(self, current_binding="", parent=None):
         super().__init__(parent)
+        type(self)._capture_active = True
+        self.finished.connect(self._capture_finished)
         self._captured = current_binding or ""
 
         self.setWindowTitle("Edit Keybind")
@@ -505,6 +511,9 @@ class KeybindCaptureDialog(QtWidgets.QDialog):
 
     def binding_text(self):
         return self._captured
+
+    def _capture_finished(self, _result):
+        type(self)._capture_active = False
 
     def flash_warning(self):
         base_pos = self.pos()
@@ -930,6 +939,10 @@ class ControlPanel(QtWidgets.QMainWindow):
         self.build_home_page()
         self.build_credits_page()
 
+        # Settings opened from a setup should return to that setup.
+        self.title_bar.close_btn.clicked.disconnect()
+        self.title_bar.close_btn.clicked.connect(self._handle_titlebar_close)
+
         # Overlay — marker starts hidden until a position is registered
         self.overlay = Overlay()
         self.overlay.new(500, 300)
@@ -965,6 +978,16 @@ class ControlPanel(QtWidgets.QMainWindow):
         self._update_progress_dialog = None
         self._active_update_asset_kind = ""
         self._update_check_started = False
+
+    def _handle_titlebar_close(self):
+        """Close the current panel or return to the setup context."""
+        if (
+            getattr(self, "_from_setup", False)
+            and self.stack.currentWidget() is self.settings_page
+        ):
+            self.show_home()
+            return
+        self.close_all()
 
     def _set_panel_size(self, width: int, height: int):
         self.setMinimumSize(width, height)
@@ -1424,6 +1447,15 @@ class ControlPanel(QtWidgets.QMainWindow):
     # ---------------- KEYBINDS ----------------
     def build_keybind_settings(self, layout):
         self.keybind_widgets = {}
+        self.keybind_label_widgets = {}
+
+        notice = QtWidgets.QLabel(
+            "Duplicate keybinds are highlighted yellow. Execute and Stop may share a key."
+        )
+        notice.setWordWrap(True)
+        notice.setStyleSheet("color: #ffd54f; font: 8.5pt 'Times New Roman';")
+        layout.addWidget(notice)
+        layout.addSpacing(6)
 
         for key, value in self.config["keybinds"].items():
             row = QtWidgets.QHBoxLayout()
@@ -1431,6 +1463,12 @@ class ControlPanel(QtWidgets.QMainWindow):
             row.setSpacing(8)
 
             label_block = self.create_setting_label_block(key)
+            label_layout = label_block.layout()
+            if label_layout is not None and label_layout.count() > 0:
+                title_item = label_layout.itemAt(0)
+                title_label = title_item.widget() if title_item is not None else None
+                if isinstance(title_label, QtWidgets.QLabel):
+                    self.keybind_label_widgets[key] = title_label
 
             value_label = QtWidgets.QLabel(value)
             value_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
@@ -1465,23 +1503,8 @@ class ControlPanel(QtWidgets.QMainWindow):
                     binding = dialog.binding_text()
                     if not binding:
                         break
-                    duplicate = False
-                    for other_key, other_widget in self.keybind_widgets.items():
-                        if other_key != key_name and other_widget.text().upper() == binding.upper():
-                            duplicate = True
-                            break
-                    if duplicate:
-                        try:
-                            winsound.MessageBeep()
-                        except Exception:
-                            try:
-                                winsound.Beep(920, 180)
-                            except Exception:
-                                pass
-                        dialog.flash_warning()
-                        dialog._retry()
-                        continue
                     display.setText(binding)
+                    self._refresh_keybind_duplicate_highlighting()
                     break
 
             edit_btn.clicked.connect(open_editor)
@@ -1494,6 +1517,32 @@ class ControlPanel(QtWidgets.QMainWindow):
 
             layout.addLayout(row)
             layout.addSpacing(6)
+
+        self._refresh_keybind_duplicate_highlighting()
+
+    def _refresh_keybind_duplicate_highlighting(self):
+        """Highlight conflicting keybind labels while allowing Execute/Stop."""
+        if not hasattr(self, "keybind_widgets"):
+            return
+
+        bindings = {
+            key: str(widget.text()).strip().upper()
+            for key, widget in self.keybind_widgets.items()
+        }
+        duplicate_keys = set()
+        for key, binding in bindings.items():
+            if not binding:
+                continue
+            matches = [other for other, value in bindings.items() if value == binding]
+            if len(matches) < 2:
+                continue
+            allowed_pair = set(matches) == {"Execute", "Stop"}
+            if not allowed_pair:
+                duplicate_keys.update(matches)
+
+        for key, label in self.keybind_label_widgets.items():
+            color = "#ffd54f" if key in duplicate_keys else "rgba(255,255,255,220)"
+            label.setStyleSheet(f"color: {color}; font: 11pt 'Times New Roman';")
 
 
     # ---------------- MAIN SETTINGS PAGE ----------------
@@ -2155,6 +2204,7 @@ class ControlPanel(QtWidgets.QMainWindow):
     def _start_update_check(self):
         if self._update_check_thread is not None:
             return
+        logger.info("Starting GitHub update check: %s", UPDATE_RELEASE_API_URL)
         self._update_check_started = True
         self._update_check_request_id += 1
         request_id = self._update_check_request_id
@@ -2190,6 +2240,12 @@ class ControlPanel(QtWidgets.QMainWindow):
     def _on_update_check_finished(self, result: dict):
         """Handle update check completion with safety checks."""
         result = dict(result or {})
+        logger.info(
+            "GitHub update check finished: request_id=%s status=%s error=%s",
+            result.get("request_id"),
+            result.get("status"),
+            result.get("error", ""),
+        )
         if result.get("request_id") != self._update_check_request_id:
             return
         self._stop_update_check_timeout()
@@ -2210,7 +2266,7 @@ class ControlPanel(QtWidgets.QMainWindow):
         timer.setSingleShot(True)
         timer.timeout.connect(lambda: self._on_update_check_timeout(request_id))
         self._update_check_timeout_timer = timer
-        timer.start(9000)
+        timer.start(7000)
 
     def _stop_update_check_timeout(self):
         if self._update_check_timeout_timer is not None:
@@ -2219,27 +2275,26 @@ class ControlPanel(QtWidgets.QMainWindow):
             self._update_check_timeout_timer = None
 
     def _on_update_check_timeout(self, request_id: int):
-        """Handle update check timeout with forced cleanup."""
+        """Fail closed without blocking the Qt UI thread."""
         if request_id != self._update_check_request_id:
             return
+        logger.warning("GitHub update check timed out: request_id=%s", request_id)
         self._update_check_request_id += 1
-        
-        # Force stop the timeout timer
         self._stop_update_check_timeout()
-        
-        # Force cleanup stalled thread
-        if self._update_check_thread is not None:
+
+        # Do not call wait(): urllib can still be inside a socket read.
+        # The worker has bounded request timeouts and late results are ignored
+        # because the request id was invalidated above.
+        thread = self._update_check_thread
+        if thread is not None:
             try:
-                # Increment request ID to ignore any late responses
-                self._update_check_request_id += 1
-                # Try to quit the thread gracefully
-                self._update_check_thread.quit()
-                self._update_check_thread.wait(1000)  # Wait up to 1 second
-            except Exception:
+                thread.finished.connect(lambda t=thread: self._forget_stale_update_check_thread(t))
+                self._stale_update_check_threads.append((thread, self._update_check_worker))
+                thread.quit()
+            except RuntimeError:
                 pass
-            finally:
-                self._update_check_thread = None
-                self._update_check_worker = None
+        self._update_check_thread = None
+        self._update_check_worker = None
         
         self._update_status = {
             "request_id": self._update_check_request_id,
@@ -2250,7 +2305,6 @@ class ControlPanel(QtWidgets.QMainWindow):
             "assets": {},
         }
         self._set_update_button_label(self._update_status)
-        self._stop_update_check_timeout()
 
     def _forget_stale_update_check_thread(self, thread):
         self._stale_update_check_threads = [
@@ -3626,6 +3680,10 @@ class KeybindListener(QtCore.QObject):
         self._timer.start(30)
 
     def _poll(self):
+        if KeybindCaptureDialog._capture_active:
+            # Prevent a recorded key from executing an application action.
+            self._prev.clear()
+            return
         for action, key_name in self.keybinds.items():
             modifiers, main_key = split_keybind(key_name)
             vk = VK_MAP.get(main_key.upper())
@@ -4207,7 +4265,7 @@ class ScreenEdgeFailsafeEditorDialog(QtWidgets.QDialog):
 
     def values(self):
         return dict(self._values)
-
+    
     def _bar_rect(self, edge: str):
         top_y = int(self._values["top_px"])
         bottom_y = self.height() - int(self._values["bottom_px"])

@@ -1,8 +1,8 @@
 {
     "keybinds": {
         "See_Setup_Info": "CTRL+I",
-        "Execute": "CTRL+R",
-        "Stop": "CTRL+F",
+        "Execute": "ALT+F",
+        "Stop": "ALT+F",
         "Register_Click_Position": "ALT+S",
         "New_Marker_Sandbox": "CTRL+N",
         "New_Keybind_Sandbox": "CTRL+M",

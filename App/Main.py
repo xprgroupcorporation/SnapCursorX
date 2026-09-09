@@ -1,6 +1,8 @@
 import ctypes
+import logging
 import os
 import sys
+import tempfile
 import traceback
 import win32gui
 import win32con
@@ -20,6 +22,22 @@ from PySide6 import QtCore, QtGui, QtWidgets
 sys.path.insert(0, str(Path(__file__).parent))
 
 from Core.Utils import ASSETS_DIR
+
+
+def _configure_logging():
+    """Keep startup/background failures available after a silent crash."""
+    try:
+        log_dir = Path(tempfile.gettempdir()) / "SnapCursorX"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        logging.basicConfig(
+            filename=str(log_dir / "snapcursorx.log"),
+            level=logging.INFO,
+            format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+            encoding="utf-8",
+        )
+    except Exception:
+        # Logging must never prevent the application from starting.
+        pass
 
 
 def _configure_windows_dpi():
@@ -72,6 +90,7 @@ def _show_already_running_warning():
         )
 
 def main():
+    _configure_logging()
     _configure_windows_dpi()
     _install_qt_error_handler()
     

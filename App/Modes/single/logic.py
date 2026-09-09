@@ -157,7 +157,7 @@ class SingleModeLogicMixin:
                 "Execute":               kb.get("Execute", "F1"),
                 "Stop":                  kb.get("Stop", "F2"),
                 "Register_Click_Position": kb.get("Register_Click_Position", "F3"),
-                "See_Setup_Info":        kb.get("See_Setup_Info", "F1"),
+                "See_Setup_Info":        kb.get("See_Setup_Info", "CTRL+I"),
             },
             parent=self,
         )
@@ -351,7 +351,7 @@ class SingleModeLogicMixin:
         exec_k = keybinds.get("Execute", "F1")
         stop_k = keybinds.get("Stop", "F2")
         reg_k = keybinds.get("Register_Click_Position", "F4")
-        info_k = keybinds.get("See_Setup_Info", "F1")
+        info_k = keybinds.get("See_Setup_Info", "CTRL+I")
         quick_k = keybinds.get("Quick_Save", "F7")
         recover_k = keybinds.get("Recover_Window_Position", "F8")
         hide_k = keybinds.get("Save_Close_Setup", "F9")
@@ -783,6 +783,21 @@ class SingleModeLogicMixin:
 
     def _on_keybind(self, action: str):
         if self._failsafe_edit_active:
+            return
+        keybinds = self._global_config.get("keybinds", {})
+        shared_execute_stop = (
+            str(keybinds.get("Execute", "")).strip().upper()
+            == str(keybinds.get("Stop", "")).strip().upper()
+        )
+        if shared_execute_stop and action == "Execute":
+            self._shared_execute_stop_event = True
+            if self._executing:
+                self._on_stop()
+            else:
+                self._on_execute()
+            return
+        if shared_execute_stop and action == "Stop" and getattr(self, "_shared_execute_stop_event", False):
+            self._shared_execute_stop_event = False
             return
         if action == "Execute":
             self._on_execute()

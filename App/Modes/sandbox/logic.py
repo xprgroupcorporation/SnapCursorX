@@ -1136,7 +1136,7 @@ class SandboxModeLogicMixin:
                 "Execute": kb.get("Execute", "F2"),
                 "Stop": kb.get("Stop", "F3"),
                 "Register_Click_Position": kb.get("Register_Click_Position", "F4"),
-                "See_Setup_Info": kb.get("See_Setup_Info", "F1"),
+                "See_Setup_Info": kb.get("See_Setup_Info", "CTRL+I"),
                 "New_Marker_Sandbox": kb.get("New_Marker_Sandbox", "F5"),
                 "New_Keybind_Sandbox": kb.get("New_Keybind_Sandbox", "F6"),
             },
@@ -1572,7 +1572,7 @@ class SandboxModeLogicMixin:
         return (
             f"Execute ({keybinds.get('Execute', 'F2')}) • Stop ({keybinds.get('Stop', 'F3')}) • "
             f"Set Pos. ({keybinds.get('Register_Click_Position', 'F4')}) • "
-            f"Info ({keybinds.get('See_Setup_Info', 'F1')}) • +Marker ({keybinds.get('New_Marker_Sandbox', 'F5')}) •\n"
+            f"Info ({keybinds.get('See_Setup_Info', 'CTRL+I')}) • +Marker ({keybinds.get('New_Marker_Sandbox', 'F5')}) •\n"
             f"+Keybind ({keybinds.get('New_Keybind_Sandbox', 'F6')}) • Save ({keybinds.get('Quick_Save', 'F7')}) • "
             f"Toggle Minimize ({keybinds.get('Recover_Window_Position', 'F8')}) • S&Close ({keybinds.get('Save_Close_Setup', 'F9')}) • "
             f"Kill ({keybinds.get('Kill_Switch', 'F10')})"
@@ -2343,6 +2343,21 @@ class SandboxModeLogicMixin:
         self._update_execution_progress()
 
     def _on_setup_keybind(self, action: str):
+        keybinds = ConfigManager.load().get("keybinds", {})
+        shared_execute_stop = (
+            str(keybinds.get("Execute", "")).strip().upper()
+            == str(keybinds.get("Stop", "")).strip().upper()
+        )
+        if shared_execute_stop and action == "Execute":
+            self._shared_execute_stop_event = True
+            if self._executing:
+                self._on_stop()
+            else:
+                self._on_execute()
+            return
+        if shared_execute_stop and action == "Stop" and getattr(self, "_shared_execute_stop_event", False):
+            self._shared_execute_stop_event = False
+            return
         if action == "Execute":
             self._on_execute()
         elif action == "Stop":

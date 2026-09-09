@@ -666,6 +666,8 @@ class SingleModeUIMixin:
         left_col.addWidget(self._execute_mode_title)
         left_col.addSpacing(1)
         left_col.addWidget(self._click_target_card)
+        left_col.addSpacing(1)
+        left_col.addLayout(row(anti_lbl, self._anti_check))
         left_col.addStretch()
 
         repeat_times_row = QtWidgets.QHBoxLayout()
@@ -725,9 +727,7 @@ class SingleModeUIMixin:
         right_col.addSpacing(2)
         right_col.addLayout(row(mouse_button_lbl, self._mouse_button_combo))
         right_col.addSpacing(1)
-        right_col.addLayout(row(hold_lbl, self._hold_spin))
-        right_col.addSpacing(1)
-        right_col.addLayout(row(anti_lbl, self._anti_check))
+        right_col.addLayout(row(hold_lbl, self._hold_spin))    
         right_col.addStretch()
 
         split_row = QtWidgets.QHBoxLayout()

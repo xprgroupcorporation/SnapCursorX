@@ -55,7 +55,7 @@ class ConfigManager:
 
     DEFAULT = {
         "keybinds": {
-            "See_Setup_Info": "F1",
+            "See_Setup_Info": "CTRL+I",
             "Execute": "F2",
             "Stop": "F3",
             "Register_Click_Position": "F4",

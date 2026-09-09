@@ -1,3 +1,5 @@
+import os
+
 from PySide6 import QtWidgets, QtCore, QtGui
 
 
@@ -19,8 +21,8 @@ class FileMenuPopup(QtWidgets.QWidget):
                 line.setStyleSheet("color: rgba(255,255,255,40);")
                 return line
             btn = QtWidgets.QPushButton(text)
-            btn.setFixedHeight(18)
-            btn.setFont(QtGui.QFont("Times New Roman", 8))
+            btn.setFixedHeight(24)
+            btn.setFont(QtGui.QFont("Times New Roman", 10))
             btn.setCursor(QtCore.Qt.PointingHandCursor)
             btn.setStyleSheet("""
                 QPushButton {
@@ -48,7 +50,7 @@ class FileMenuPopup(QtWidgets.QWidget):
         layout.addWidget(make_item("", None, is_divider=True))
         layout.addWidget(make_item("Shutdown", self._on_shutdown))
 
-        self.setFixedWidth(110)
+        self.setFixedWidth(150)
         self.adjustSize()
 
     def _get_control_panel(self):
@@ -67,13 +69,11 @@ class FileMenuPopup(QtWidgets.QWidget):
         self.setup_ui.close()
 
     def _on_shutdown(self):
-        if not self.setup_ui.prompt_save_before_close():
-            return
         cp = self._get_control_panel()
-        if cp and hasattr(cp, "close_all"):
-            cp.close_all()
+        if cp and hasattr(cp, "_kill_switch"):
+            cp._kill_switch()
         else:
-            QtWidgets.QApplication.quit()
+            os._exit(0)
 
     def _restore_cp(self):
         """Restore ControlPanel if it is minimized."""

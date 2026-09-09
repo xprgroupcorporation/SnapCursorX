@@ -1,4 +1,8 @@
 # __Real Public Release Ignore__ git push origin main
+# git rm --cached
+
+# Dev Note
+DEV Note.md
 
 # Python cache
 __pycache__/

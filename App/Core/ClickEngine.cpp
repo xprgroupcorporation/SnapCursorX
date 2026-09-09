@@ -164,10 +164,10 @@ DWORD buttonUpFlag(int button) noexcept {
 }
 
 bool sendButtonEvent(DWORD flags) noexcept {
-    INPUT input{};
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = flags;
-    return ::SendInput(1, &input, sizeof(INPUT)) == 1;
+    // Legacy mouse_event is accepted by some applications that ignore
+    // SendInput-injected button messages, including some game clients.
+    ::mouse_event(flags, 0, 0, 0, 0);
+    return true;
 }
 
 void waitForTick(LONGLONG targetTick, const LARGE_INTEGER& frequency) noexcept {
@@ -603,25 +603,16 @@ void ClickEngine::sendClick(std::uint32_t clickCount, int offsetX, int offsetY) 
         const int button = mouseButton_.load(std::memory_order_relaxed);
         const bool useLegacyFastLeftClick = (holdUs == 0 && button == kLeftButton && offsetX == 0 && offsetY == 0);
         if (useLegacyFastLeftClick) {
-            if (clickCount == 1) {
+            for (std::uint32_t i = 0; i < clickCount; ++i) {
+                if (!sendButtonEvent(MOUSEEVENTF_LEFTDOWN)) {
+                    return;
+                }
                 pendingPressCallbacks_.fetch_add(1, std::memory_order_release);
                 callbackCv_.notify_one();
-                ::SendInput(2, const_cast<INPUT*>(followClickInputs_), sizeof(INPUT));
+                sendButtonEvent(MOUSEEVENTF_LEFTUP);
                 pendingReleaseCallbacks_.fetch_add(1, std::memory_order_release);
                 callbackCv_.notify_one();
-                return;
             }
-
-            INPUT batchInputs[kBatchModeClicks * 2]{};
-            const std::uint32_t inputCount = clickCount * 2;
-            for (std::uint32_t i = 0; i < clickCount; ++i) {
-                batchInputs[i * 2] = followClickInputs_[0];
-                batchInputs[i * 2 + 1] = followClickInputs_[1];
-            }
-            pendingPressCallbacks_.fetch_add(clickCount, std::memory_order_release);
-            pendingReleaseCallbacks_.fetch_add(clickCount, std::memory_order_release);
-            callbackCv_.notify_one();
-            ::SendInput(inputCount, batchInputs, sizeof(INPUT));
             return;
         }
 
@@ -651,16 +642,16 @@ void ClickEngine::sendClick(std::uint32_t clickCount, int offsetX, int offsetY) 
     const int targetY = targetY_.load(std::memory_order_relaxed) + offsetY;
 
     ::SetCursorPos(targetX, targetY);
-    if (clickCount == 1) {
-        ::SendInput(2, const_cast<INPUT*>(followClickInputs_), sizeof(INPUT));
-    } else {
-        INPUT batchInputs[kBatchModeClicks * 2]{};
-        const std::uint32_t inputCount = clickCount * 2;
-        for (std::uint32_t i = 0; i < clickCount; ++i) {
-            batchInputs[i * 2] = followClickInputs_[0];
-            batchInputs[i * 2 + 1] = followClickInputs_[1];
+    const int button = mouseButton_.load(std::memory_order_relaxed);
+    for (std::uint32_t i = 0; i < clickCount; ++i) {
+        if (!sendButtonEvent(buttonDownFlag(button))) {
+            break;
         }
-        ::SendInput(inputCount, batchInputs, sizeof(INPUT));
+        pendingPressCallbacks_.fetch_add(1, std::memory_order_release);
+        callbackCv_.notify_one();
+        sendButtonEvent(buttonUpFlag(button));
+        pendingReleaseCallbacks_.fetch_add(1, std::memory_order_release);
+        callbackCv_.notify_one();
     }
     ::SetCursorPos(originalCursor.x, originalCursor.y);
 }

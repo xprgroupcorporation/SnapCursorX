@@ -12,6 +12,8 @@ from PySide6 import QtCore
 
 logger = logging.getLogger(__name__)
 
+UPDATE_REQUEST_TIMEOUT_SECONDS = 5
+
 
 def parse_numeric_version_text(raw_version: str) -> str:
     match = re.search(r"\d+(?:\.\d+)+", str(raw_version or ""))
@@ -46,18 +48,12 @@ class UpdateCheckWorker(QtCore.QObject):
 
     def run(self):
         """Run the update check with comprehensive error handling."""
-        result = None
         try:
-            if not self._has_internet():
-                result = self._failure_result("No internet connection")
-                self._emit_finished(result)
-                return
-
             release_data = self._load_release_data()
             if not release_data:
-                result = self._failure_result("Could not fetch release data")
-                self._emit_finished(result)
-                return
+                raise RuntimeError("GitHub returned no release data")
+            if not isinstance(release_data, dict):
+                raise RuntimeError("GitHub returned an invalid release response")
 
             latest_version = self._resolve_latest_version(release_data)
             assets = self._extract_assets(release_data.get("assets", []))
@@ -68,26 +64,24 @@ class UpdateCheckWorker(QtCore.QObject):
             )
 
             if latest_version and compare_versions(latest_version, self._current_version) > 0:
-                result = {
+                self._emit_finished({
                     "request_id": self._request_id,
                     "status": "update_available",
                     "label": f"New Update!\nVer{latest_version}",
                     "latest_version": latest_version,
                     "release_page_url": release_page_url,
                     "assets": assets,
-                }
-                self._emit_finished(result)
+                })
                 return
 
-            result = {
+            self._emit_finished({
                 "request_id": self._request_id,
                 "status": "latest",
                 "label": "(Latest ver)",
                 "latest_version": latest_version or self._current_version,
                 "release_page_url": release_page_url,
                 "assets": assets,
-            }
-            self._emit_finished(result)
+            })
         except Exception as exc:
             error_msg = str(exc).strip() or exc.__class__.__name__
             logger.error(f"Update check failed: {error_msg}", exc_info=True)
@@ -128,7 +122,7 @@ class UpdateCheckWorker(QtCore.QObject):
 
     def _load_release_data(self):
         if not self._release_api_url:
-            return None
+            raise RuntimeError("Release API URL is empty")
         url = self._release_api_url
         try:
             data = self._request_json(url)
@@ -148,6 +142,8 @@ class UpdateCheckWorker(QtCore.QObject):
     def _request_json(self, url: str):
         """Fetch JSON from URL with detailed error handling."""
         try:
+            if not url.startswith("https://api.github.com/"):
+                raise RuntimeError("Release API URL is not a GitHub API URL")
             request = urllib.request.Request(
                 url,
                 headers={
@@ -155,7 +151,7 @@ class UpdateCheckWorker(QtCore.QObject):
                     "User-Agent": "SnapCursorX-UpdateChecker",
                 },
             )
-            with urllib.request.urlopen(request, timeout=6) as response:
+            with urllib.request.urlopen(request, timeout=UPDATE_REQUEST_TIMEOUT_SECONDS) as response:
                 content = response.read().decode("utf-8")
                 return json.loads(content)
         except json.JSONDecodeError as exc:

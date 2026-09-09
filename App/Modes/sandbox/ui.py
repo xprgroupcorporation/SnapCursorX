@@ -385,6 +385,8 @@ class SandboxHandleWidget(QtWidgets.QWidget):
         self._apply_shape()
         self.move_center(center_x, center_y)
         self.setToolTip(self._label_text if self._label_text else "")
+        self._sync_window_style()
+        self.raise_()
         self.update()
 
     def set_interactive(self, enabled: bool):
@@ -475,12 +477,23 @@ class SandboxHandleWidget(QtWidgets.QWidget):
         painter.setPen(QtCore.Qt.NoPen)
         painter.drawEllipse(center_x, center_y, core_size, core_size)
 
-        font = QtGui.QFont("Times New Roman", 9 if self._small_label else 10)
-        font.setBold(True)
+        font = QtGui.QFont("Times New Roman", 12 if self._small_label else 16)
+        font.setWeight(QtGui.QFont.Weight.Black)
         painter.setFont(font)
         if self._label_text:
-            painter.setPen(QtGui.QPen(QtGui.QColor(255, 255, 255, 235), 1))
-            painter.drawText(self.rect(), QtCore.Qt.AlignCenter, self._label_text)
+            # Thin 60%-opacity black stroke keeps numbers readable over fills.
+            text_path = QtGui.QPainterPath()
+            text_path.addText(0, 0, font, self._label_text)
+            text_bounds = text_path.boundingRect()
+            text_path.translate(
+                (self.width() - text_bounds.width()) / 2.0 - text_bounds.left(),
+                (self.height() - text_bounds.height()) / 2.0 - text_bounds.top(),
+            )
+            stroke = QtGui.QPen(QtGui.QColor(0, 0, 0, 220), 0.5)
+            stroke.setJoinStyle(QtCore.Qt.RoundJoin)
+            painter.setPen(stroke)
+            painter.setBrush(QtGui.QColor(255, 255, 255, 255))
+            painter.drawPath(text_path)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -490,6 +503,7 @@ class SandboxHandleWidget(QtWidgets.QWidget):
         super().showEvent(event)
         self._apply_shape()
         self._sync_window_style()
+        self.raise_()
 
     def mousePressEvent(self, event):
         if not self._interactive:
