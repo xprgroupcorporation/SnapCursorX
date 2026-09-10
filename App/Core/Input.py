@@ -1,6 +1,7 @@
 import ctypes
 import importlib
 import os
+import ctypes
 from pathlib import Path
 
 from PySide6 import QtCore
@@ -46,6 +47,7 @@ class ClickEngineBridge:
 
     def _candidate_paths(self):
         return [
+            CORE_DIR / "ClickEngine_input.dll",
             CORE_DIR / "ClickEngine_tuned.dll",
             CORE_DIR / "ClickEngine.dll",
             CORE_DIR / "ClickEngine_linear.dll",
@@ -244,7 +246,7 @@ class NativeClickController(QtCore.QObject):
     _queued_release = QtCore.Signal(int, int)
     stopped = QtCore.Signal()
 
-    def __init__(self, delay_us: int, x: int, y: int, follow_mouse: bool, click_randomness: bool, hold_ms: int = 0, mouse_button: str = "left", enable_click_feedback: bool = True, parent=None):
+    def __init__(self, delay_us: int, x: int, y: int, follow_mouse: bool, click_randomness: bool, hold_ms: int = 0, mouse_button: str = "left", input_type: str = "mouse", scroll_direction: str = "up", keyboard_key_name: str = "", keyboard_key_vk: int = 0, keyboard_uppercase: bool = False, enable_click_feedback: bool = True, parent=None):
         super().__init__(parent)
         self._delay_us = max(1, int(delay_us))
         self._x = int(x)
@@ -276,6 +278,10 @@ class NativeClickController(QtCore.QObject):
             return 1
         if self._mouse_button == "middle":
             return 2
+        if self._mouse_button == "x1":
+            return 3
+        if self._mouse_button == "x2":
+            return 4
         return 0
 
     def start(self):

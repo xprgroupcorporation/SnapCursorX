@@ -11,6 +11,10 @@ class SharedWorkerHelper:
             return win32con.WM_RBUTTONDOWN, win32con.WM_RBUTTONUP, win32con.MK_RBUTTON
         if button == "middle":
             return win32con.WM_MBUTTONDOWN, win32con.WM_MBUTTONUP, win32con.MK_MBUTTON
+        if button == "x1":
+            return win32con.WM_XBUTTONDOWN, win32con.WM_XBUTTONUP, win32con.MK_XBUTTON1 | (win32con.XBUTTON1 << 16)
+        if button == "x2":
+            return win32con.WM_XBUTTONDOWN, win32con.WM_XBUTTONUP, win32con.MK_XBUTTON2 | (win32con.XBUTTON2 << 16)
         return win32con.WM_LBUTTONDOWN, win32con.WM_LBUTTONUP, win32con.MK_LBUTTON
 
     def _resolve_target_hwnd(self, click_x: int, click_y: int, ignored_hwnds=None, descend_to_child: bool = False):

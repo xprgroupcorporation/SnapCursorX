@@ -56,6 +56,7 @@ class ConfigManager:
     DEFAULT = {
         "keybinds": {
             "See_Setup_Info": "CTRL+I",
+<<<<<<< HEAD
             "Execute": "F2",
             "Stop": "F3",
             "Register_Click_Position": "F4",
@@ -65,9 +66,22 @@ class ConfigManager:
             "Recover_Window_Position": "F8",
             "Save_Close_Setup": "F9",
             "Kill_Switch": "F10"
+=======
+            "Execute": "ALT+F",
+            "Stop": "ALT+F",
+            "Register_Click_Position": "ALT+S",
+            "Record_Input_Sandbox": "CTRL+R",
+            "New_Marker_Sandbox": "CTRL+N",
+            "New_Keybind_Sandbox": "CTRL+M",
+            "Quick_Save": "CTRL+S",
+            "Recover_Window_Position": "ALT+Z",
+            "Save_Close_Setup": "ALT+X",
+            "Kill_Switch": "ALT+C"
+>>>>>>> main
         },
         "general": {
             "Run_On_Start": False,
+            "Allow_Update_Checks": True,
             "Performance_Mode_Trigger_MS": 99,
         },
         "visual": {
@@ -100,6 +114,7 @@ class ConfigManager:
         STARTER_CLICK_RANDOMNESS_KEY: "starter_values",
         LEGACY_STARTER_CLICK_RANDOMNESS_KEY: "starter_values",
         "Run_On_Start": "general",
+        "Allow_Update_Checks": "general",
         "Performance_Mode_Trigger_MS": "general",
     }
 
@@ -216,7 +231,7 @@ class SettingDisplay:
         },
         "Register_Click_Position": {
             "title": "Set Position",
-            "description": "Single mode shortcut to capture a new click position.",
+            "description": "Shortcut to capture a new click position and apply to current marker.",
         },
         "New_Marker_Sandbox": {
             "title": "New Marker",
@@ -246,9 +261,17 @@ class SettingDisplay:
             "title": "Setup Info",
             "description": "Open or hide the setup tips and help window.",
         },
+        "Record_Input_Sandbox": {
+            "title": "Record Input (Sandbox)",
+            "description": "Reserved shortcut for future sandbox input recording.",
+        },
         "Run_On_Start": {
             "title": "Run On Start",
             "description": "Launch this app automatically when Windows starts.",
+        },
+        "Allow_Update_Checks": {
+            "title": "Allow Update Checks",
+            "description": "Allow update checks and downloads from GitHub. (Disable if you want to block all network activity.)",
         },
         "Default_Screen_Failsafe_PX": {
             "title": "Screen Failsafe PX",

@@ -489,7 +489,11 @@ class SandboxHandleWidget(QtWidgets.QWidget):
                 (self.width() - text_bounds.width()) / 2.0 - text_bounds.left(),
                 (self.height() - text_bounds.height()) / 2.0 - text_bounds.top(),
             )
+<<<<<<< HEAD
             stroke = QtGui.QPen(QtGui.QColor(0, 0, 0, 220), 0.5)
+=======
+            stroke = QtGui.QPen(QtGui.QColor(0, 0, 0, 220), 0.8)
+>>>>>>> main
             stroke.setJoinStyle(QtCore.Qt.RoundJoin)
             painter.setPen(stroke)
             painter.setBrush(QtGui.QColor(255, 255, 255, 255))

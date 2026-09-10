@@ -190,6 +190,12 @@ class SingleModeLogicMixin:
         settings.setdefault("repeat_times_target", 100)
         settings.setdefault("repeat_timer_seconds", 60)
         settings.setdefault("mouse_button", "left")
+        settings.setdefault("input_type", "mouse")
+        settings.setdefault("scroll_direction", "up")
+        settings.setdefault("scroll_time_ms", 100)
+        settings.setdefault("keyboard_key_name", "")
+        settings.setdefault("keyboard_key_vk", 0)
+        settings.setdefault("keyboard_uppercase", False)
         self._ensure_click_target_positions(settings)
         self._load_position_for_mode(self._read_click_target_mode(settings), persist=False)
         self.data["failsafe"] = self._sanitize_failsafe(self.data.get("failsafe", {
@@ -424,9 +430,20 @@ class SingleModeLogicMixin:
         if hasattr(self, "_selected_click_target_mode"):
             self._write_click_target_mode(self.data["settings"], self._selected_click_target_mode())
         self.data["settings"]["mouse_button"] = self._mouse_button_combo.currentData() or "left"
+        self.data["settings"]["input_type"] = self._selected_input_type()
+        self.data["settings"]["scroll_direction"] = self._scroll_direction_combo.currentData() or "up"
+        self.data["settings"]["scroll_time_ms"] = self._scroll_time_spin.value()
+        self.data["settings"]["keyboard_uppercase"] = self._uppercase_check.isChecked()
         self._sync_ui()
         self._update_follow_mouse_state()
         self._update_click_mode_warning()
+
+    def _selected_input_type(self):
+        if getattr(self, "_scroll_input_btn", None) is not None and self._scroll_input_btn.isChecked():
+            return "scroll"
+        if getattr(self, "_keyboard_input_btn", None) is not None and self._keyboard_input_btn.isChecked():
+            return "keyboard"
+        return "mouse"
 
     def _format_repeat_time(self, seconds: int):
         seconds = max(0, int(seconds))
@@ -435,7 +452,7 @@ class SingleModeLogicMixin:
         secs = seconds % 60
         return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
-    def _on_repeat_mode_changed(self):
+    def _on_repeat_mode_changed(self, *_args):
         sender = self.sender()
         if sender == self._repeat_times_check and self._repeat_times_check.isChecked():
             mode = "repeat_times"
@@ -450,6 +467,20 @@ class SingleModeLogicMixin:
         else:
             mode = "until_stop"
         self.data["settings"]["repeat_mode"] = mode
+        self._sync_repeat_mode_widgets()
+
+    def _on_repeat_target_changed(self, value):
+        self.data["settings"]["repeat_times_target"] = max(1, int(value))
+        self.data["settings"]["repeat_mode"] = "repeat_times"
+        self._sync_repeat_mode_widgets()
+
+    def _on_repeat_timer_changed(self, *_args):
+        hours = int(self._repeat_timer_h_spin.value())
+        minutes = int(self._repeat_timer_m_spin.value())
+        seconds = int(self._repeat_timer_s_spin.value())
+        total = max(1, hours * 3600 + minutes * 60 + seconds)
+        self.data["settings"]["repeat_timer_seconds"] = total
+        self.data["settings"]["repeat_mode"] = "repeat_timer"
         self._sync_repeat_mode_widgets()
 
     def _edit_repeat_times(self):
@@ -651,6 +682,8 @@ class SingleModeLogicMixin:
         self._on_settings_changed()
 
     def _follow_visual_updates_enabled(self):
+        if str(self.data.get("settings", {}).get("input_type", "mouse") or "mouse").lower() == "scroll":
+            return True
         if not self._click_target_is_follow():
             return False
         if self._executing and getattr(self, "_hide_marker_on_execute", False):
@@ -676,6 +709,20 @@ class SingleModeLogicMixin:
 
         overlay = self._get_overlay()
         if not overlay:
+            return
+
+        if str(self.data.get("settings", {}).get("input_type", "mouse") or "mouse").lower() == "scroll":
+            if overlay.markers:
+                marker_info = overlay.markers[0]
+                marker_widget = marker_info["marker"]
+                marker_widget.set_interactive(False)
+                marker_widget.set_execution_visual(False)
+                marker_widget.hide()
+                marker_info["x"] = x
+                marker_info["y"] = y
+                overlay.update_hit_region()
+            # Reuse Mouse Follow's separate, click-through indicator.
+            overlay.show_position_indicator(x, y)
             return
 
         if overlay.markers:
@@ -834,6 +881,7 @@ class SingleModeLogicMixin:
         self._native_poll_last_time = None
         self._execution_started_at = time.perf_counter()
         self._stop_sound_played = False
+        input_type = str(self.data.get("settings", {}).get("input_type", "mouse") or "mouse").lower()
 
         # Hide marker if configured
         cfg = ConfigManager.load()
@@ -841,13 +889,13 @@ class SingleModeLogicMixin:
         self._hide_marker_on_execute = bool(cfg.get("visual", {}).get("Hide_Marker_On_Execute", True))
         self._pending_stop_message = None
         overlay = self._get_overlay()
-        if self._hide_marker_on_execute:
+        if self._hide_marker_on_execute and input_type != "scroll":
             if overlay and overlay.markers:
                 overlay.markers[0]["marker"].hide()
                 overlay.update_hit_region()
             if overlay:
                 overlay.hide_position_indicator()
-        elif overlay:
+        elif overlay and input_type == "mouse":
             overlay.set_marker_execution_mode(
                 True,
                 keep_visible=True,
@@ -869,6 +917,8 @@ class SingleModeLogicMixin:
             self._timing_card.setEnabled(False)
         self._hold_spin.setEnabled(False)
         self._anti_check.setEnabled(False)
+        if hasattr(self, "_input_type_card"):
+            self._input_type_card.setEnabled(False)
         if hasattr(self, "_click_target_card"):
             self._click_target_card.setEnabled(False)
         for widget_name in ("_follow_mode_btn", "_marker_mode_btn", "_pointer_mode_btn"):
@@ -907,11 +957,19 @@ class SingleModeLogicMixin:
                 effective_hold_ms,
             )
             mouse_button = (settings.get("mouse_button", "left") or "left").lower()
+            input_type = str(settings.get("input_type", "mouse") or "mouse").lower()
+            scroll_direction = str(settings.get("scroll_direction", "up") or "up").lower()
+            scroll_time_ms = max(0, int(settings.get("scroll_time_ms", 100) or 0))
+            keyboard_key_name = str(settings.get("keyboard_key_name", "") or "")
+            keyboard_key_vk = int(settings.get("keyboard_key_vk", 0) or 0)
+            keyboard_uppercase = bool(settings.get("keyboard_uppercase", False))
+            if input_type == "keyboard" and keyboard_key_vk <= 0:
+                raise RuntimeError("Record one keyboard key before executing.")
             click_target_mode = self._read_click_target_mode(settings)
             follow_mouse = bool(click_target_mode == CLICK_TARGET_FOLLOW)
             pointer_mode = bool(click_target_mode == CLICK_TARGET_POINTER)
             click_randomness = read_click_randomness(settings, True)
-            if follow_mouse:
+            if follow_mouse and input_type == "mouse":
                 bridge = get_click_engine_bridge()
                 if not bridge.available:
                     raise RuntimeError(f"ClickEngine DLL unavailable: {bridge.load_error}")
@@ -919,9 +977,6 @@ class SingleModeLogicMixin:
                     bridge.stop_clicking()
                 except Exception:
                     pass
-
-                if mouse_button != "left":
-                    print(f"[SingleMode] Mouse button '{mouse_button}' selected, but native engine currently uses left-click SendInput.")
 
                 print(f"[SingleMode] Native DLL path active: {bridge.dll_path}")
                 self._worker = _native_click_controller_type()(
@@ -941,7 +996,7 @@ class SingleModeLogicMixin:
                     self._worker.click_finished.connect(self._on_worker_click_finished)
                 else:
                     self._worker.click_finished.connect(self._on_worker_click_count)
-            elif pointer_mode:
+            elif pointer_mode and input_type == "mouse":
                 bridge = get_click_engine_bridge()
                 if not bridge.available:
                     raise RuntimeError(f"ClickEngine DLL unavailable: {bridge.load_error}")
@@ -959,6 +1014,12 @@ class SingleModeLogicMixin:
                     click_randomness=click_randomness,
                     hold_ms=self._click_effect_hold_ms,
                     mouse_button=mouse_button,
+                    input_type=input_type,
+                    scroll_direction=scroll_direction,
+                    scroll_time_ms=scroll_time_ms,
+                    keyboard_key_name=keyboard_key_name,
+                    keyboard_key_vk=keyboard_key_vk,
+                    keyboard_uppercase=keyboard_uppercase,
                     enable_click_feedback=self._click_effects_enabled,
                     parent=self,
                 )
@@ -985,6 +1046,12 @@ class SingleModeLogicMixin:
                     click_randomness=click_randomness,
                     use_real_click=False,
                     mouse_button=mouse_button,
+                    input_type=input_type,
+                    scroll_direction=scroll_direction,
+                    scroll_time_ms=scroll_time_ms,
+                    keyboard_key_name=keyboard_key_name,
+                    keyboard_key_vk=keyboard_key_vk,
+                    keyboard_uppercase=keyboard_uppercase,
                     repeat_mode=repeat_mode,
                     repeat_target=settings.get("repeat_times_target", 100),
                     repeat_duration_seconds=repeat_duration_seconds,
@@ -1002,7 +1069,7 @@ class SingleModeLogicMixin:
             self._ensure_progress_timer()
             self._progress_timer.start()
             self._update_execution_progress()
-            if follow_mouse:
+            if follow_mouse and input_type == "mouse":
                 self._start_failsafe_monitor(failsafe)
             else:
                 self._stop_failsafe_monitor()
@@ -1075,6 +1142,8 @@ class SingleModeLogicMixin:
                 self._timing_card.setEnabled(True)
             self._hold_spin.setEnabled(True)
             self._anti_check.setEnabled(True)
+            if hasattr(self, "_input_type_card"):
+                self._input_type_card.setEnabled(True)
             if hasattr(self, "_click_target_card"):
                 self._click_target_card.setEnabled(True)
             for widget_name in ("_follow_mode_btn", "_marker_mode_btn", "_pointer_mode_btn"):

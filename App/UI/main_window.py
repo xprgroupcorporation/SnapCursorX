@@ -22,6 +22,7 @@ from Core.Input import NativeClickController, get_click_engine_bridge
 from Core.Setup import SetupManager, ActiveSetupManager
 from Core.Updater_Module import UpdateCheckWorker, UpdateDownloadWorker, parse_numeric_version_text
 from Core.Utils import ASSETS_DIR, BASE_DIR
+from Core.Startup import set_run_on_start
 from UI.components.animations import WindowAnimator
 from UI.components.spinbox import HorizontalStepSpinBox
 from Modes._SharedUtils.Worker_helper import SharedWorkerHelper
@@ -362,11 +363,17 @@ def read_starter_click_randomness(source, default=True):
 class KeybindCaptureDialog(QtWidgets.QDialog):
     _capture_active = False
 
+<<<<<<< HEAD
     def __init__(self, current_binding="", parent=None):
+=======
+    def __init__(self, current_binding="", parent=None, single_key_only=False):
+>>>>>>> main
         super().__init__(parent)
         type(self)._capture_active = True
         self.finished.connect(self._capture_finished)
         self._captured = current_binding or ""
+        self.captured_vk = 0
+        self._single_key_only = bool(single_key_only)
 
         self.setWindowTitle("Edit Keybind")
         self.setModal(True)
@@ -397,12 +404,17 @@ class KeybindCaptureDialog(QtWidgets.QDialog):
         layout.setContentsMargins(14, 12, 14, 12)
         layout.setSpacing(8)
 
-        title = QtWidgets.QLabel("Listening for keybind input")
+        title = QtWidgets.QLabel("Listening for key input" if self._single_key_only else "Listening for keybind input")
         title.setAlignment(QtCore.Qt.AlignCenter)
         title.setStyleSheet("font: 10pt 'Times New Roman'; color: rgba(255,255,255,220);")
         layout.addWidget(title)
 
-        note = QtWidgets.QLabel("Hold Ctrl / Alt / Shift if needed, then press any key.")
+        note_text = (
+            "Single mode accepts one key only — combinations are not supported."
+            if self._single_key_only
+            else "Hold Ctrl / Alt / Shift if needed, then press any key."
+        )
+        note = QtWidgets.QLabel(note_text)
         note.setAlignment(QtCore.Qt.AlignCenter)
         note.setWordWrap(True)
         note.setStyleSheet("font: 8pt 'Times New Roman'; color: rgba(255,255,255,150);")
@@ -411,7 +423,7 @@ class KeybindCaptureDialog(QtWidgets.QDialog):
         self._value_label = QtWidgets.QLabel("")
         self._value_label.setAlignment(QtCore.Qt.AlignCenter)
         self._value_label.setFixedHeight(28)
-        self._value_label.setStyleSheet("font: 10pt 'Consolas'; color: rgba(255,255,255,230); background: rgba(0,0,0,70); border: none; border-radius: 4px;")
+        self._value_label.setStyleSheet("font: 10pt 'Times New Roman'; color: rgba(255,255,255,230); background: rgba(0,0,0,70); border: none; border-radius: 4px;")
         layout.addWidget(self._value_label)
 
         btn_row = QtWidgets.QHBoxLayout()
@@ -445,6 +457,7 @@ class KeybindCaptureDialog(QtWidgets.QDialog):
 
     def _retry(self):
         self._captured = ""
+        self.captured_vk = 0
         self._value_label.setText("Press a key...")
         self.confirm_btn.setEnabled(True)
 
@@ -462,7 +475,7 @@ class KeybindCaptureDialog(QtWidgets.QDialog):
         self.accept()
 
     def keyPressEvent(self, event):
-        if event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
+        if not self._single_key_only and event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
             self._confirm_binding()
             event.accept()
             return
@@ -498,13 +511,17 @@ class KeybindCaptureDialog(QtWidgets.QDialog):
                 "ENTER": "NUMENTER",
             }
             key_name = keypad_map.get(key_name, key_name)
-        if mods & QtCore.Qt.ControlModifier:
+        native_vk = int(event.nativeVirtualKey() or 0)
+        self.captured_vk = native_vk or int(VK_MAP.get(key_name.upper(), 0))
+        if not self._single_key_only and mods & QtCore.Qt.ControlModifier:
             modifiers.append("CTRL")
-        if mods & QtCore.Qt.AltModifier:
+        if not self._single_key_only and mods & QtCore.Qt.AltModifier:
             modifiers.append("ALT")
-        if mods & QtCore.Qt.ShiftModifier:
+        if not self._single_key_only and mods & QtCore.Qt.ShiftModifier:
             modifiers.append("SHIFT")
 
+        if self._single_key_only:
+            key_name = (event.text() or key_name).lower()
         self._captured = "+".join(modifiers + [key_name]) if modifiers else key_name
         self._value_label.setText(self._captured)
         event.accept()
@@ -961,9 +978,10 @@ class ControlPanel(QtWidgets.QMainWindow):
             parent=self,
         )
         self._app_keybind_listener.triggered.connect(self._on_app_keybind)
+        updates_enabled = self._update_checks_enabled()
         self._update_status = {
-            "status": "idle",
-            "label": "(Latest ver)",
+            "status": "idle" if updates_enabled else "disabled",
+            "label": "(Latest ver)" if updates_enabled else "Updates disabled",
             "latest_version": parse_numeric_version_text(AppConfig.VERSION),
             "release_page_url": UPDATE_RELEASE_PAGE_URL,
             "assets": {},
@@ -978,6 +996,53 @@ class ControlPanel(QtWidgets.QMainWindow):
         self._update_progress_dialog = None
         self._active_update_asset_kind = ""
         self._update_check_started = False
+        self._set_update_button_label(self._update_status)
+
+    def _handle_titlebar_close(self):
+        """Close the current panel or return to the setup context."""
+        if (
+            getattr(self, "_from_setup", False)
+            and self.stack.currentWidget() is self.settings_page
+        ):
+            self.show_home()
+            return
+        self.close_all()
+
+    def _update_checks_enabled(self) -> bool:
+        config = getattr(self, "config", None)
+        if not isinstance(config, dict):
+            config = ConfigManager.load()
+        return bool(config.get("general", {}).get("Allow_Update_Checks", True))
+
+    def _set_updates_disabled_state(self):
+        self._update_status = {
+            "status": "disabled",
+            "label": "Updates disabled",
+            "latest_version": parse_numeric_version_text(AppConfig.VERSION),
+            "release_page_url": UPDATE_RELEASE_PAGE_URL,
+            "assets": {},
+        }
+        self._set_update_button_label(self._update_status)
+
+    def _refresh_update_access_state(self):
+        if not self._update_checks_enabled():
+            self._set_updates_disabled_state()
+            return
+
+        if str(self._update_status.get("status", "")).lower() != "disabled":
+            return
+
+        self._update_status = {
+            "status": "idle",
+            "label": "(Latest ver)",
+            "latest_version": parse_numeric_version_text(AppConfig.VERSION),
+            "release_page_url": UPDATE_RELEASE_PAGE_URL,
+            "assets": {},
+        }
+        self._set_update_button_label(self._update_status)
+        self._update_check_started = False
+        if self.isVisible():
+            QtCore.QTimer.singleShot(0, self._start_update_check)
 
     def _handle_titlebar_close(self):
         """Close the current panel or return to the setup context."""
@@ -1247,6 +1312,23 @@ class ControlPanel(QtWidgets.QMainWindow):
             self.config["keybinds"][key] = widget.text()
 
         ConfigManager.save(self.config)
+
+        startup_enabled = bool(self.config.get("general", {}).get("Run_On_Start", False))
+        startup_ok, startup_error = set_run_on_start(startup_enabled)
+        if not startup_ok:
+            self.config["general"]["Run_On_Start"] = False
+            run_on_start_widget = self.general_widgets.get("Run_On_Start")
+            if isinstance(run_on_start_widget, QtWidgets.QCheckBox):
+                run_on_start_widget.setChecked(False)
+            ConfigManager.save(self.config)
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Run On Start",
+                f"Could not update Windows startup settings.\n\n{startup_error}",
+            )
+
+        self._refresh_update_access_state()
+
         for w in QtWidgets.QApplication.instance().topLevelWidgets():
             if hasattr(w, "overlay") and hasattr(w.overlay, "refresh_marker_sizes"):
                 try:
@@ -2138,6 +2220,7 @@ class ControlPanel(QtWidgets.QMainWindow):
             "update": ("rgba(150,255,150,150)", "rgba(200,255,200,100)", "rgba(100,255,100,65)"),
             "checking": ("rgba(150,150,150,80)", "rgba(200,250,200,60)", "rgba(220,220,220,40)"),
             "failed": ("rgba(255,150,150,100)", "rgba(255,250,200,80)", "rgba(255,220,220,60)"),
+            "disabled": ("rgba(90,90,90,75)", "rgba(120,120,120,90)", "rgba(70,70,70,90)"),
             "latest": ("rgba(150,150,150,20)", "rgba(200,250,200,25)", "rgba(220,220,220,40)"),
         }
         bg, hover, pressed = colors.get(state, colors["latest"])
@@ -2176,6 +2259,8 @@ class ControlPanel(QtWidgets.QMainWindow):
                 return "Latest Release\n(Click for info)", "latest"
             if status == "checking":
                 return "Checking For\nUpdates...", "checking"
+            if status == "disabled":
+                return "Updates Disabled\nEnable in Settings", "disabled"
             if status in ("check_failed", "no_internet"):
                 return "Check Failed\nTry Again", "failed"
             text = label or status
@@ -2204,6 +2289,12 @@ class ControlPanel(QtWidgets.QMainWindow):
     def _start_update_check(self):
         if self._update_check_thread is not None:
             return
+<<<<<<< HEAD
+=======
+        if not self._update_checks_enabled():
+            self._set_updates_disabled_state()
+            return
+>>>>>>> main
         logger.info("Starting GitHub update check: %s", UPDATE_RELEASE_API_URL)
         self._update_check_started = True
         self._update_check_request_id += 1
@@ -2249,6 +2340,11 @@ class ControlPanel(QtWidgets.QMainWindow):
         if result.get("request_id") != self._update_check_request_id:
             return
         self._stop_update_check_timeout()
+        if not self._update_checks_enabled():
+            self._update_check_thread = None
+            self._update_check_worker = None
+            self._set_updates_disabled_state()
+            return
         self._update_status = result
         self._set_update_button_label(self._update_status)
         # Force cleanup even if thread references are bad
@@ -2278,6 +2374,12 @@ class ControlPanel(QtWidgets.QMainWindow):
         """Fail closed without blocking the Qt UI thread."""
         if request_id != self._update_check_request_id:
             return
+<<<<<<< HEAD
+=======
+        if not self._update_checks_enabled():
+            self._set_updates_disabled_state()
+            return
+>>>>>>> main
         logger.warning("GitHub update check timed out: request_id=%s", request_id)
         self._update_check_request_id += 1
         self._stop_update_check_timeout()
@@ -2312,6 +2414,15 @@ class ControlPanel(QtWidgets.QMainWindow):
         ]
 
     def _on_update_release_clicked(self):
+        if not self._update_checks_enabled():
+            QtWidgets.QMessageBox.information(
+                self,
+                "Update Checks Disabled",
+                "Update checks are disabled.\n\n"
+                "Turn on 'Allow Update Checks' in Settings > General first.",
+            )
+            return
+
         status = str(self._update_status.get("status", "idle"))
         if status in ("idle", "checking", "no_internet", "check_failed"):
             self._start_update_check()
@@ -2383,6 +2494,14 @@ class ControlPanel(QtWidgets.QMainWindow):
             return False
 
     def _start_update_download(self, asset_kind: str, asset: dict | None):
+        if not self._update_checks_enabled():
+            QtWidgets.QMessageBox.information(
+                self,
+                "Update Checks Disabled",
+                "Update checks and downloads are disabled.\n\n"
+                "Turn on 'Allow Update Checks' in Settings > General first.",
+            )
+            return
         if not asset:
             QtWidgets.QMessageBox.warning(self, "Update", "Selected update asset is not available.")
             return
@@ -3493,6 +3612,12 @@ class AutoClickWorker(SharedWorkerHelper, QtCore.QThread):
         click_randomness,
         use_real_click=False,
         mouse_button="left",
+        input_type="mouse",
+        scroll_direction="up",
+        scroll_time_ms=100,
+        keyboard_key_name="",
+        keyboard_key_vk=0,
+        keyboard_uppercase=False,
         repeat_mode="until_stop",
         repeat_target=0,
         repeat_duration_seconds=0,
@@ -3509,6 +3634,12 @@ class AutoClickWorker(SharedWorkerHelper, QtCore.QThread):
         self.click_randomness = click_randomness
         self.use_real_click = use_real_click
         self.mouse_button = (mouse_button or "left").lower()
+        self.input_type = (input_type or "mouse").lower()
+        self.scroll_direction = (scroll_direction or "up").lower()
+        self.scroll_time_ms = max(0, int(scroll_time_ms or 0))
+        self.keyboard_key_name = str(keyboard_key_name or "")
+        self.keyboard_key_vk = max(0, int(keyboard_key_vk or 0))
+        self.keyboard_uppercase = bool(keyboard_uppercase)
         self.repeat_mode = repeat_mode or "until_stop"
         self.repeat_target = max(0, int(repeat_target or 0))
         self.repeat_duration_seconds = max(0.0, float(repeat_duration_seconds or 0))
@@ -3595,6 +3726,59 @@ class AutoClickWorker(SharedWorkerHelper, QtCore.QThread):
         except Exception:
             return False
 
+    def _keyboard_input(self):
+        if not self.keyboard_key_vk:
+            return False
+        key_up = 0x0002
+        vk_shift = 0x10
+        try:
+            if self.keyboard_uppercase:
+                win32api.keybd_event(vk_shift, 0, 0, 0)
+            win32api.keybd_event(self.keyboard_key_vk, 0, 0, 0)
+            self._sleep_until(time.perf_counter() + self.hold_time)
+            win32api.keybd_event(self.keyboard_key_vk, 0, key_up, 0)
+            if self.keyboard_uppercase:
+                win32api.keybd_event(vk_shift, 0, key_up, 0)
+            return True
+        except Exception:
+            return False
+
+    def _scroll_input(self):
+        try:
+            # Use Windows-native wheel injection; pyautogui's wheel path is
+            # unreliable in several browsers and foreground applications.
+            horizontal = self.scroll_direction in ("left", "right")
+            flag = 0x01000 if horizontal else 0x0800  # HWHEEL / WHEEL
+            positive = self.scroll_direction in ("up", "right")
+            wheel_delta = 120 if positive else -120
+            duration_seconds = self.scroll_time_ms / 1000.0
+            deadline = time.perf_counter() + duration_seconds
+            user32 = ctypes.windll.user32
+
+            while self._running:
+                user32.mouse_event(flag, 0, 0, ctypes.c_uint32(wheel_delta).value, 0)
+                if duration_seconds <= 0 or time.perf_counter() >= deadline:
+                    break
+                self._sleep_until(min(deadline, time.perf_counter() + 0.016))
+            return True
+        except Exception:
+            return False
+
+    def _perform_input(self, click_x, click_y, hold_time):
+        if self.input_type == "keyboard":
+            self.click_started.emit(click_x, click_y)
+            ok = self._keyboard_input()
+            self.click_finished.emit(click_x, click_y)
+            return ok
+        if self.input_type == "scroll":
+            self.click_started.emit(click_x, click_y)
+            ok = self._scroll_input()
+            self.click_finished.emit(click_x, click_y)
+            return ok
+        if self.use_real_click:
+            return self._real_click(click_x, click_y, hold_time)
+        return self._post_click(click_x, click_y, hold_time)
+
     def _sleep_until(self, target_time: float):
         return super()._sleep_until(target_time, coarse_threshold=0.002, coarse_ratio=0.5, coarse_cap=0.01, fine_sleep=0.0005)
 
@@ -3646,10 +3830,7 @@ class AutoClickWorker(SharedWorkerHelper, QtCore.QThread):
                 click_x += random.randint(-4, 4)
                 click_y += random.randint(-4, 4)
 
-            if self.use_real_click:
-                clicked = self._real_click(click_x, click_y, hold_time)
-            else:
-                clicked = self._post_click(click_x, click_y, hold_time)
+            clicked = self._perform_input(click_x, click_y, hold_time)
             if not self._running:
                 break
             if clicked:
@@ -4215,7 +4396,7 @@ class ScreenEdgeFailsafeEditorDialog(QtWidgets.QDialog):
                 background: rgba(255,255,255,28);
             }
         """)
-        panel_width = min(760, max(520, self.width() - 120))
+        panel_width = min(820, max(600, self.width() - 120))
         panel.setGeometry(max(8, (self.width() - panel_width) // 2), 8, panel_width, 108)
 
         layout = QtWidgets.QVBoxLayout(panel)
@@ -4242,7 +4423,7 @@ class ScreenEdgeFailsafeEditorDialog(QtWidgets.QDialog):
         self._reset_btn = QtWidgets.QPushButton("Undo Changes (Alt)")
         self._default_btn = QtWidgets.QPushButton("Set Default (Ctrl)")
         for button in (self._done_btn, self._cancel_btn, self._reset_btn, self._default_btn):
-            button.setFixedSize(130, 30)
+            button.setFixedSize(150, 30)
         self._done_btn.clicked.connect(self.accept)
         self._cancel_btn.clicked.connect(self.reject)
         self._reset_btn.clicked.connect(self._reset_to_original)

@@ -232,7 +232,13 @@ class SingleModeUIMixin:
         settings.setdefault("repeat_mode", "until_stop")
         settings.setdefault("repeat_times_target", 100)
         settings.setdefault("repeat_timer_seconds", 60)
+        settings.setdefault("input_type", "mouse")
         settings.setdefault("mouse_button", "left")
+        settings.setdefault("scroll_direction", "up")
+        settings.setdefault("scroll_time_ms", 100)
+        settings.setdefault("keyboard_key_name", "")
+        settings.setdefault("keyboard_key_vk", 0)
+        settings.setdefault("keyboard_uppercase", False)
         self.data["failsafe"] = self._sanitize_failsafe(self.data.get("failsafe", {
             "enabled": True,
             "top_px": default_px,
@@ -309,6 +315,20 @@ class SingleModeUIMixin:
             h.setSpacing(4)
             h.addWidget(left_widget)
             h.addWidget(right_widget)
+            return h
+
+        def input_row(left_widget, right_widget):
+            """Input Type rows: 45% label, 5% gutter, 50% control."""
+            h = QtWidgets.QHBoxLayout()
+            h.setContentsMargins(0, 0, 0, 0)
+            h.setSpacing(0)
+            gutter = QtWidgets.QWidget()
+            gutter.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+            left_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+            right_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+            h.addWidget(left_widget, 45)
+            h.addWidget(gutter, 5)
+            h.addWidget(right_widget, 50)
             return h
 
         self._timing_cache = {
@@ -439,7 +459,8 @@ class SingleModeUIMixin:
         self._hold_spin = HorizontalStepSpinBox()
         self._hold_spin.setRange(0, 99999)
         self._hold_spin.setValue(max(0, self.data["settings"].get("mouse_hold_ms", starter.get("Default_Mouse_Hold_MS", 100))))
-        self._hold_spin.setFixedWidth(86)
+        self._hold_spin.setMinimumWidth(0)
+        self._hold_spin.setMaximumWidth(16777215)
         self._hold_spin.setFixedHeight(24)
         self._hold_spin.setStyleSheet(spin_style)
         self._hold_spin.valueChanged.connect(self._on_settings_changed)
@@ -452,11 +473,121 @@ class SingleModeUIMixin:
         self._anti_check.setStyleSheet(chk_style)
         self._anti_check.stateChanged.connect(self._on_settings_changed)
 
+        input_type_title = QtWidgets.QLabel("Input Type")
+        input_type_title.setAlignment(QtCore.Qt.AlignCenter)
+        input_type_title.setStyleSheet("color: rgba(255,255,255,220); font: bold 8pt 'Times New Roman';")
+
+        self._input_type_card = QtWidgets.QFrame()
+        self._input_type_card.setObjectName("timingCard")
+        self._input_type_card.setStyleSheet(self._timing_card_style())
+        input_card_layout = QtWidgets.QVBoxLayout(self._input_type_card)
+        input_card_layout.setContentsMargins(4, 2, 4, 3)
+        input_card_layout.setSpacing(3)
+        input_type_row = QtWidgets.QHBoxLayout()
+        input_type_row.setSpacing(3)
+        self._mouse_input_btn = QtWidgets.QPushButton("Mouse")
+        self._scroll_input_btn = QtWidgets.QPushButton("Scroll Wheel")
+        self._keyboard_input_btn = QtWidgets.QPushButton("Keyboard")
+        for btn in (self._mouse_input_btn, self._scroll_input_btn, self._keyboard_input_btn):
+            btn.setCheckable(True)
+            btn.setCursor(QtCore.Qt.PointingHandCursor)
+            btn.setFixedHeight(22)
+            btn.setStyleSheet(self._target_mode_button_style())
+            input_type_row.addWidget(btn, 1)
+            btn.clicked.connect(self._on_input_type_changed)
+        input_card_layout.addLayout(input_type_row)
+        input_divider = QtWidgets.QFrame()
+        input_divider.setFrameShape(QtWidgets.QFrame.HLine)
+        input_divider.setStyleSheet("color: rgba(255,255,255,55);")
+        input_card_layout.addWidget(input_divider)
+
+        self._input_stack = QtWidgets.QStackedWidget()
+        self._input_stack.setStyleSheet("background: transparent;")
+        self._input_stack.setMinimumHeight(62)
+
+        mouse_page = QtWidgets.QWidget()
+        mouse_layout = QtWidgets.QVBoxLayout(mouse_page)
+        mouse_layout.setContentsMargins(4, 0, 4, 0)
+        mouse_layout.setSpacing(2)
+        mouse_button_lbl = QtWidgets.QLabel("Mouse Button")
+        mouse_button_lbl.setStyleSheet(lbl)
+        self._mouse_button_combo = QtWidgets.QComboBox()
+        for label, value in (("Left", "left"), ("Right", "right"), ("Middle", "middle"), ("M4", "x1"), ("M5", "x2")):
+            self._mouse_button_combo.addItem(label, value)
+        self._mouse_button_combo.setFixedHeight(24)
+        self._mouse_button_combo.setStyleSheet(self._single_combo_style())
+        self._mouse_button_combo.currentIndexChanged.connect(self._on_settings_changed)
+        mouse_button_row = input_row(mouse_button_lbl, self._mouse_button_combo)
+        mouse_layout.addLayout(mouse_button_row)
+        mouse_layout.addLayout(input_row(hold_lbl, self._hold_spin))
+        mouse_layout.addLayout(input_row(anti_lbl, self._anti_check))
+
+        scroll_page = QtWidgets.QWidget()
+        scroll_layout = QtWidgets.QVBoxLayout(scroll_page)
+        scroll_layout.setContentsMargins(4, 2, 4, 2)
+        scroll_layout.setSpacing(2)
+        scroll_label = QtWidgets.QLabel("Input Direction")
+        scroll_label.setStyleSheet(lbl)
+        self._scroll_direction_combo = QtWidgets.QComboBox()
+        for label, value in (("Up", "up"), ("Down", "down"), ("Left", "left"), ("Right", "right")):
+            self._scroll_direction_combo.addItem(label, value)
+        self._scroll_direction_combo.setFixedHeight(24)
+        self._scroll_direction_combo.setStyleSheet(self._single_combo_style())
+        self._scroll_direction_combo.currentIndexChanged.connect(self._on_settings_changed)
+        scroll_layout.addLayout(input_row(scroll_label, self._scroll_direction_combo))
+        scroll_time_label = QtWidgets.QLabel("Scroll Time (ms)")
+        scroll_time_label.setStyleSheet(lbl)
+        self._scroll_time_spin = HorizontalStepSpinBox()
+        self._scroll_time_spin.setRange(0, 99999)
+        self._scroll_time_spin.setValue(max(0, int(settings.get("scroll_time_ms", 100))))
+        self._scroll_time_spin.setFixedHeight(24)
+        self._scroll_time_spin.setStyleSheet(spin_style)
+        self._scroll_time_spin.valueChanged.connect(self._on_settings_changed)
+        scroll_layout.addLayout(input_row(scroll_time_label, self._scroll_time_spin))
+
+        keyboard_page = QtWidgets.QWidget()
+        keyboard_layout = QtWidgets.QVBoxLayout(keyboard_page)
+        keyboard_layout.setContentsMargins(4, 2, 4, 2)
+        keyboard_layout.setSpacing(2)
+        key_row = QtWidgets.QHBoxLayout()
+        key_row.setContentsMargins(0, 0, 0, 0)
+        key_row.setSpacing(0)
+        key_label = QtWidgets.QLabel("Key:")
+        key_label.setStyleSheet(lbl)
+        self._record_key_btn = QtWidgets.QPushButton("Record Key")
+        self._record_key_btn.setFixedHeight(24)
+        self._record_key_btn.setStyleSheet("""
+            QPushButton {
+                color: white;
+                background: rgba(0, 0, 0, 153);
+                border: 1px solid rgba(255,255,255,45);
+                border-radius: 6px;
+                font: 8pt 'Times New Roman';
+                padding: 3px 8px;
+            }
+            QPushButton:hover { background: rgba(55, 25, 90, 190); }
+        """)
+        self._record_key_btn.clicked.connect(self._record_single_key)
+        self._uppercase_check = QtWidgets.QCheckBox("Uppercase")
+        self._uppercase_check.setStyleSheet(text_chk_style)
+        self._uppercase_check.stateChanged.connect(self._on_settings_changed)
+        key_gutter = QtWidgets.QWidget()
+        key_gutter.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        key_row.addWidget(key_label, 45)
+        key_row.addWidget(key_gutter, 5)
+        key_row.addWidget(self._record_key_btn, 50)
+        keyboard_layout.addLayout(key_row)
+        keyboard_layout.addWidget(self._uppercase_check)
+
+        for page in (mouse_page, scroll_page, keyboard_page):
+            self._input_stack.addWidget(page)
+        input_card_layout.addWidget(self._input_stack)
+
         self._click_target_card = QtWidgets.QFrame()
         self._click_target_card.setObjectName("timingCard")
         self._click_target_card.setStyleSheet(self._timing_card_style())
         self._click_target_card.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
-        self._click_target_card.setMaximumHeight(84)
+        self._click_target_card.setFixedHeight(84)
         click_target_layout = QtWidgets.QVBoxLayout(self._click_target_card)
         click_target_layout.setContentsMargins(0, 0, 0, 2)
         click_target_layout.setSpacing(2)
@@ -493,45 +624,129 @@ class SingleModeUIMixin:
         click_target_layout.addWidget(click_target_divider)
         click_target_layout.addWidget(self._click_target_info_lbl)
 
+        self._execute_mode_blocker = QtWidgets.QFrame()
+        self._execute_mode_blocker.setObjectName("executeModeBlocker")
+        self._execute_mode_blocker.setStyleSheet("""
+            QFrame#executeModeBlocker {
+                background: rgba(0, 0, 0, 128);
+                border: 1px solid rgba(255,255,255,35);
+                border-radius: 10px;
+            }
+            QLabel {
+                color: rgba(255,255,255,220);
+                font: bold 8pt 'Times New Roman';
+            }
+        """)
+        self._execute_mode_blocker.setFixedHeight(84)
+        blocker_layout = QtWidgets.QVBoxLayout(self._execute_mode_blocker)
+        blocker_label = QtWidgets.QLabel("ONLY FOR MOUSE INPUT")
+        blocker_label.setAlignment(QtCore.Qt.AlignCenter)
+        blocker_layout.addWidget(blocker_label)
+        self._execute_mode_stack = QtWidgets.QStackedWidget()
+        self._execute_mode_stack.setFixedHeight(84)
+        self._execute_mode_stack.addWidget(self._click_target_card)
+        self._execute_mode_stack.addWidget(self._execute_mode_blocker)
+        self._execute_mode_stack.setCurrentIndex(0)
+
         self._execute_mode_title = QtWidgets.QLabel("Execute Mode")
         self._execute_mode_title.setAlignment(QtCore.Qt.AlignCenter)
         self._execute_mode_title.setStyleSheet("color: rgba(255,255,255,220); font: bold 8pt 'Times New Roman';")
 
-        repeat_lbl = QtWidgets.QLabel("Repeat Mode:")
-        repeat_lbl.setStyleSheet(lbl)
+        self._repeat_card = QtWidgets.QFrame()
+        self._repeat_card.setObjectName("timingCard")
+        self._repeat_card.setStyleSheet(self._timing_card_style())
+        self._repeat_card.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        self._repeat_card.setMaximumHeight(70)
+        repeat_card_layout = QtWidgets.QVBoxLayout(self._repeat_card)
+        repeat_card_layout.setContentsMargins(0, 0, 0, 1)
+        repeat_card_layout.setSpacing(2)
 
-        self._repeat_times_check = QtWidgets.QCheckBox("Repeat Times")
-        self._repeat_timer_check = QtWidgets.QCheckBox("Repeat Timer")
-        self._until_stop_check = QtWidgets.QCheckBox("Until Stop")
-        for chk in (self._repeat_times_check, self._repeat_timer_check, self._until_stop_check):
-            chk.setStyleSheet(text_chk_style)
-            chk.stateChanged.connect(self._on_repeat_mode_changed)
+        repeat_mode_row = QtWidgets.QHBoxLayout()
+        repeat_mode_row.setSpacing(3)
+        repeat_mode_row.setContentsMargins(0, 0, 0, 0)
 
-        self._repeat_times_edit_btn = QtWidgets.QPushButton("Edit")
-        self._repeat_timer_edit_btn = QtWidgets.QPushButton("Edit")
-        for btn in (self._repeat_times_edit_btn, self._repeat_timer_edit_btn):
+        self._repeat_times_check = QtWidgets.QPushButton("Target")
+        self._repeat_timer_check = QtWidgets.QPushButton("Timer")
+        self._until_stop_check = QtWidgets.QPushButton("Until Stop")
+        for btn in (self._repeat_times_check, self._repeat_timer_check, self._until_stop_check):
+            btn.setCheckable(True)
+            btn.setCursor(QtCore.Qt.PointingHandCursor)
             btn.setFixedHeight(22)
-            btn.setFixedWidth(52)
-            btn.setFont(QtGui.QFont("Times New Roman", 8))
-            btn.setStyleSheet("""
-                QPushButton {
-                    background: rgba(255,255,255,16);
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                }
-                QPushButton:hover { background: rgba(255,255,255,28); }
-                QPushButton:disabled { color: rgba(255,255,255,70); border-color: transparent; }
-            """)
-        self._repeat_times_edit_btn.clicked.connect(self._edit_repeat_times)
-        self._repeat_timer_edit_btn.clicked.connect(self._edit_repeat_timer)
+            btn.setStyleSheet(self._target_mode_button_style())
+            repeat_mode_row.addWidget(btn, 1)
+            btn.clicked.connect(self._on_repeat_mode_changed)
 
-        self._repeat_times_value = QtWidgets.QLabel("")
-        self._repeat_timer_value = QtWidgets.QLabel("")
-        self._until_stop_value = QtWidgets.QLabel("Run until Stop is pressed")
-        for value_lbl in (self._repeat_times_value, self._repeat_timer_value, self._until_stop_value):
-            value_lbl.setStyleSheet(sub)
-            value_lbl.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        repeat_divider = QtWidgets.QFrame()
+        repeat_divider.setFrameShape(QtWidgets.QFrame.HLine)
+        repeat_divider.setStyleSheet("color: rgba(255,255,255,55);")
+        repeat_divider.setFixedHeight(2)
+
+        self._repeat_value_stack = QtWidgets.QStackedWidget()
+        self._repeat_value_stack.setStyleSheet("background: transparent;")
+        self._repeat_value_stack.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        self._repeat_value_stack.setMaximumHeight(34)
+
+        repeat_target_page = QtWidgets.QWidget()
+        repeat_target_layout = QtWidgets.QHBoxLayout(repeat_target_page)
+        repeat_target_layout.setContentsMargins(8, 1, 8, 0)
+        repeat_target_layout.setSpacing(5)
+        self._repeat_target_spin = HorizontalStepSpinBox()
+        self._repeat_target_spin.setRange(1, 999999999)
+        self._repeat_target_spin.setValue(max(1, int(settings.get("repeat_times_target", 100))))
+        self._repeat_target_spin.setFixedHeight(24)
+        self._repeat_target_spin.setStyleSheet(self._timing_spin_style())
+        self._repeat_target_spin.valueChanged.connect(self._on_repeat_target_changed)
+        repeat_target_label = QtWidgets.QLabel("clicks")
+        repeat_target_label.setStyleSheet(sub)
+        repeat_target_layout.addWidget(self._repeat_target_spin, 1)
+        repeat_target_layout.addWidget(repeat_target_label)
+
+        repeat_timer_page = QtWidgets.QWidget()
+        repeat_timer_layout = QtWidgets.QHBoxLayout(repeat_timer_page)
+        repeat_timer_layout.setContentsMargins(8, 1, 8, 0)
+        repeat_timer_layout.setSpacing(4)
+        self._repeat_timer_h_spin = HorizontalStepSpinBox()
+        self._repeat_timer_m_spin = HorizontalStepSpinBox()
+        self._repeat_timer_s_spin = HorizontalStepSpinBox()
+        for spin, low, high, label_text in (
+            (self._repeat_timer_h_spin, 0, 999, "H"),
+            (self._repeat_timer_m_spin, 0, 59, "M"),
+            (self._repeat_timer_s_spin, 0, 59, "S"),
+        ):
+            spin.setRange(low, high)
+            spin.setFixedHeight(24)
+            spin.setButtonLayout("vertical")
+            spin.setStyleSheet(self._timing_part_style())
+            spin.valueChanged.connect(self._on_repeat_timer_changed)
+            host = QtWidgets.QWidget()
+            host_layout = QtWidgets.QVBoxLayout(host)
+            host_layout.setContentsMargins(0, 0, 0, 0)
+            host_layout.setSpacing(1)
+            host_layout.addWidget(spin)
+            part_label = QtWidgets.QLabel(label_text)
+            part_label.setAlignment(QtCore.Qt.AlignCenter)
+            part_label.setStyleSheet("color: rgba(255,255,255,170); font: 5.6pt 'Times New Roman';")
+            host_layout.addWidget(part_label)
+            repeat_timer_layout.addWidget(host, 1)
+
+        repeat_until_page = QtWidgets.QWidget()
+        repeat_until_layout = QtWidgets.QHBoxLayout(repeat_until_page)
+        repeat_until_layout.setContentsMargins(8, 1, 8, 0)
+        repeat_until_value = QtWidgets.QLabel("Run until Stop is pressed")
+        repeat_until_value.setAlignment(QtCore.Qt.AlignCenter)
+        repeat_until_value.setStyleSheet(sub)
+        repeat_until_layout.addWidget(repeat_until_value)
+
+        self._repeat_value_stack.addWidget(repeat_target_page)
+        self._repeat_value_stack.addWidget(repeat_timer_page)
+        self._repeat_value_stack.addWidget(repeat_until_page)
+        repeat_card_layout.addLayout(repeat_mode_row)
+        repeat_card_layout.addWidget(repeat_divider)
+        repeat_card_layout.addWidget(self._repeat_value_stack)
+
+        # Compatibility aliases used by execution-state controls.
+        self._repeat_times_edit_btn = self._repeat_target_spin
+        self._repeat_timer_edit_btn = self._repeat_value_stack
 
         self._failsafe_edit_btn = QtWidgets.QPushButton("Edit")
         self._failsafe_edit_btn.setFixedHeight(22)
@@ -558,18 +773,6 @@ class SingleModeUIMixin:
         self._failsafe_summary = QtWidgets.QLabel("")
         self._failsafe_summary.setWordWrap(True)
         self._failsafe_summary.setStyleSheet(sub)
-
-        mouse_button_lbl = QtWidgets.QLabel("Mouse Button:")
-        mouse_button_lbl.setStyleSheet(lbl)
-
-        self._mouse_button_combo = QtWidgets.QComboBox()
-        self._mouse_button_combo.addItem("Left", "left")
-        self._mouse_button_combo.addItem("Right", "right")
-        self._mouse_button_combo.addItem("Middle", "middle")
-        self._mouse_button_combo.setFixedWidth(86)
-        self._mouse_button_combo.setFixedHeight(24)
-        self._mouse_button_combo.setStyleSheet(self._single_combo_style())
-        self._mouse_button_combo.currentIndexChanged.connect(self._on_settings_changed)
 
         # ── Execute / Stop ────────────────────────────────────────────
         exec_key = kb.get("Execute", "F1")
@@ -665,30 +868,14 @@ class SingleModeUIMixin:
         left_col.addSpacing(1)
         left_col.addWidget(self._execute_mode_title)
         left_col.addSpacing(1)
+<<<<<<< HEAD
         left_col.addWidget(self._click_target_card)
         left_col.addSpacing(1)
         left_col.addLayout(row(anti_lbl, self._anti_check))
+=======
+        left_col.addWidget(self._execute_mode_stack)
+>>>>>>> main
         left_col.addStretch()
-
-        repeat_times_row = QtWidgets.QHBoxLayout()
-        repeat_times_row.setSpacing(4)
-        repeat_times_row.setContentsMargins(0, 0, 0, 0)
-        repeat_times_row.addWidget(self._repeat_times_check)
-        repeat_times_row.addStretch()
-        repeat_times_row.addWidget(self._repeat_times_edit_btn)
-
-        repeat_timer_row = QtWidgets.QHBoxLayout()
-        repeat_timer_row.setSpacing(4)
-        repeat_timer_row.setContentsMargins(0, 0, 0, 0)
-        repeat_timer_row.addWidget(self._repeat_timer_check)
-        repeat_timer_row.addStretch()
-        repeat_timer_row.addWidget(self._repeat_timer_edit_btn)
-
-        until_stop_row = QtWidgets.QHBoxLayout()
-        until_stop_row.setSpacing(4)
-        until_stop_row.setContentsMargins(0, 0, 0, 0)
-        until_stop_row.addWidget(self._until_stop_check)
-        until_stop_row.addStretch()
 
         failsafe_lbl = QtWidgets.QLabel("Screen Edge Failsafe:")
         failsafe_lbl.setStyleSheet(lbl)
@@ -707,16 +894,12 @@ class SingleModeUIMixin:
         right_col.setContentsMargins(0, 1, 0, 1)
 
         right_col.addSpacing(1)
-        right_col.addLayout(compact_row(repeat_lbl, QtWidgets.QWidget()))
+        repeat_title = QtWidgets.QLabel("Repeat Mode")
+        repeat_title.setAlignment(QtCore.Qt.AlignCenter)
+        repeat_title.setStyleSheet("color: rgba(255,255,255,220); font: bold 8pt 'Times New Roman';")
+        right_col.addWidget(repeat_title)
         right_col.addSpacing(1)
-        right_col.addLayout(repeat_times_row)
-        right_col.addWidget(self._repeat_times_value)
-        right_col.addSpacing(1)
-        right_col.addLayout(repeat_timer_row)
-        right_col.addWidget(self._repeat_timer_value)
-        right_col.addSpacing(1)
-        right_col.addLayout(until_stop_row)
-        right_col.addWidget(self._until_stop_value)
+        right_col.addWidget(self._repeat_card)
         right_col.addSpacing(2)
         right_col.addWidget(divider())
         right_col.addSpacing(2)
@@ -725,9 +908,14 @@ class SingleModeUIMixin:
         right_col.addSpacing(2)
         right_col.addWidget(divider())
         right_col.addSpacing(2)
+<<<<<<< HEAD
         right_col.addLayout(row(mouse_button_lbl, self._mouse_button_combo))
         right_col.addSpacing(1)
         right_col.addLayout(row(hold_lbl, self._hold_spin))    
+=======
+        right_col.addWidget(input_type_title)
+        right_col.addWidget(self._input_type_card)
+>>>>>>> main
         right_col.addStretch()
 
         split_row = QtWidgets.QHBoxLayout()
@@ -769,6 +957,30 @@ class SingleModeUIMixin:
             blocked = self._anti_check.blockSignals(True)
             self._anti_check.setChecked(read_click_randomness(self.data["settings"], True))
             self._anti_check.blockSignals(blocked)
+        if hasattr(self, "_input_stack"):
+            input_type = str(self.data["settings"].get("input_type", "mouse") or "mouse").lower()
+            input_type = input_type if input_type in ("mouse", "scroll", "keyboard") else "mouse"
+            input_index = {"mouse": 0, "scroll": 1, "keyboard": 2}[input_type]
+            self._input_stack.setCurrentIndex(input_index)
+            for button, value in ((self._mouse_input_btn, "mouse"), (self._scroll_input_btn, "scroll"), (self._keyboard_input_btn, "keyboard")):
+                blocked = button.blockSignals(True)
+                button.setChecked(input_type == value)
+                button.blockSignals(blocked)
+            idx = self._scroll_direction_combo.findData(self.data["settings"].get("scroll_direction", "up"))
+            blocked = self._scroll_direction_combo.blockSignals(True)
+            self._scroll_direction_combo.setCurrentIndex(max(0, idx))
+            self._scroll_direction_combo.blockSignals(blocked)
+            blocked = self._uppercase_check.blockSignals(True)
+            self._uppercase_check.setChecked(bool(self.data["settings"].get("keyboard_uppercase", False)))
+            self._uppercase_check.blockSignals(blocked)
+            blocked = self._scroll_time_spin.blockSignals(True)
+            self._scroll_time_spin.setValue(max(0, int(self.data["settings"].get("scroll_time_ms", 100))))
+            self._scroll_time_spin.blockSignals(blocked)
+            key_name = self.data["settings"].get("keyboard_key_name", "") or "Record Key"
+            uppercase = bool(self.data["settings"].get("keyboard_uppercase", False))
+            self._record_key_btn.setText(key_name.upper() if uppercase else key_name.lower())
+            mouse_input = input_type == "mouse"
+            self._execute_mode_stack.setCurrentIndex(0 if mouse_input else 1)
         if hasattr(self, "_sync_click_target_mode_ui"):
             self._sync_click_target_mode_ui()
             self._last_follow_mouse_mode = None
@@ -803,6 +1015,9 @@ class SingleModeUIMixin:
 
         click_target_mode = self._read_click_target_mode(self.data["settings"]) if hasattr(self, "_read_click_target_mode") else (CLICK_TARGET_FOLLOW if self.data["settings"].get("always_follow_mouse", False) else CLICK_TARGET_MARKER)
         follow_enabled = click_target_mode == CLICK_TARGET_FOLLOW
+        input_type = str(self.data["settings"].get("input_type", "mouse") or "mouse").lower()
+        scroll_input = input_type == "scroll"
+        keyboard_input = input_type == "keyboard"
 
         # Marker: visible only when position is set, not executing, and not in passive follow mode.
         overlay = self._get_overlay()
@@ -810,7 +1025,20 @@ class SingleModeUIMixin:
             marker_info   = overlay.markers[0]
             marker_widget = marker_info["marker"]
 
-            if self._has_position() and not self._executing and not follow_enabled:
+            if keyboard_input:
+                marker_widget.hide()
+                overlay.update_hit_region()
+                overlay.hide_position_indicator()
+            elif scroll_input:
+                marker_info["x"] = x
+                marker_info["y"] = y
+                marker_widget.set_interactive(False)
+                marker_widget.set_execution_visual(False)
+                marker_widget.hide()
+                overlay.update_hit_region()
+                # Reuse Mouse Follow's separate, click-through indicator.
+                overlay.show_position_indicator(x, y)
+            elif self._has_position() and not self._executing and not follow_enabled:
                 marker_widget.move(x - marker_widget.radius,
                                    y - marker_widget.radius)
                 marker_info["x"] = x
@@ -825,7 +1053,7 @@ class SingleModeUIMixin:
 
         show_position_indicator = not cfg.get("visual", {}).get("Hide_Marker_On_Execute", True)
 
-        if overlay:
+        if overlay and not keyboard_input and not scroll_input:
             show_mouse_indicator = self._has_position() and (
                 follow_enabled if not self._executing else show_position_indicator
             )
@@ -856,6 +1084,29 @@ class SingleModeUIMixin:
 
         self._timing_value_spin.setStyleSheet(self._timing_spin_style())
 
+    def _on_input_type_changed(self, *_args):
+        sender = self.sender()
+        input_type = "mouse"
+        if sender == self._scroll_input_btn:
+            input_type = "scroll"
+        elif sender == self._keyboard_input_btn:
+            input_type = "keyboard"
+        self.data["settings"]["input_type"] = input_type
+        self._sync_ui()
+
+    def _record_single_key(self):
+        settings = self.data["settings"]
+        dialog = _main_window_module().KeybindCaptureDialog(
+            settings.get("keyboard_key_name", ""),
+            self,
+            single_key_only=True,
+        )
+        if dialog.exec() == QtWidgets.QDialog.Accepted:
+            settings["keyboard_key_name"] = dialog.binding_text().lower()
+            settings["keyboard_key_vk"] = int(dialog.captured_vk or 0)
+            self._sync_ui()
+            self._on_settings_changed()
+
     def _set_status(self, text, color="rgba(255,255,255,130)"):
         if hasattr(self, "_status_lbl"):
             self._status_lbl.setStyleSheet(
@@ -882,6 +1133,13 @@ class SingleModeUIMixin:
                 "_repeat_times_edit_btn",
                 "_repeat_timer_edit_btn",
                 "_mouse_button_combo",
+                "_mouse_input_btn",
+                "_scroll_input_btn",
+                "_keyboard_input_btn",
+                "_scroll_direction_combo",
+                "_scroll_time_spin",
+                "_record_key_btn",
+                "_uppercase_check",
                 "_info_btn",
                 "file_btn",
                 "min_btn",
@@ -938,10 +1196,32 @@ class SingleModeUIMixin:
             widget.setChecked(checked)
             widget.blockSignals(blocked)
 
-        self._repeat_times_value.setText(f"Target clicks: {times_target}")
-        self._repeat_timer_value.setText(f"Duration: {self._format_repeat_time(timer_seconds)}")
-        self._repeat_times_edit_btn.setEnabled(not self._executing)
-        self._repeat_timer_edit_btn.setEnabled(not self._executing)
+        page_index = {
+            "repeat_times": 0,
+            "repeat_timer": 1,
+            "until_stop": 2,
+        }.get(mode, 2)
+        self._repeat_value_stack.setCurrentIndex(page_index)
+
+        blocked = self._repeat_target_spin.blockSignals(True)
+        self._repeat_target_spin.setValue(times_target)
+        self._repeat_target_spin.blockSignals(blocked)
+
+        hours = timer_seconds // 3600
+        minutes = (timer_seconds % 3600) // 60
+        seconds = timer_seconds % 60
+        for spin, value in (
+            (self._repeat_timer_h_spin, hours),
+            (self._repeat_timer_m_spin, minutes),
+            (self._repeat_timer_s_spin, seconds),
+        ):
+            blocked = spin.blockSignals(True)
+            spin.setValue(value)
+            spin.blockSignals(blocked)
+
+        enabled = not self._executing
+        self._repeat_target_spin.setEnabled(enabled)
+        self._repeat_value_stack.setEnabled(enabled)
 
     def _prompt_edit_dialog(self, title: str, body: str, editor: QtWidgets.QWidget, getter):
         self._play_system_sound("SystemQuestion", 760)

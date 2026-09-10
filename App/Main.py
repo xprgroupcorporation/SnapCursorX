@@ -22,6 +22,24 @@ from PySide6 import QtCore, QtGui, QtWidgets
 sys.path.insert(0, str(Path(__file__).parent))
 
 from Core.Utils import ASSETS_DIR
+from Config.Manager import ConfigManager
+from Core.Startup import set_run_on_start
+
+
+def _configure_logging():
+    """Keep startup/background failures available after a silent crash."""
+    try:
+        log_dir = Path(tempfile.gettempdir()) / "SnapCursorX"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        logging.basicConfig(
+            filename=str(log_dir / "snapcursorx.log"),
+            level=logging.INFO,
+            format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+            encoding="utf-8",
+        )
+    except Exception:
+        # Logging must never prevent the application from starting.
+        pass
 
 
 def _configure_logging():
@@ -93,6 +111,22 @@ def main():
     _configure_logging()
     _configure_windows_dpi()
     _install_qt_error_handler()
+
+    try:
+        startup_config = ConfigManager.load()
+        startup_enabled = bool(
+            startup_config.get("general", {}).get("Run_On_Start", False)
+        )
+        startup_ok, startup_error = set_run_on_start(startup_enabled)
+        if not startup_ok:
+            logging.getLogger(__name__).warning(
+                "Unable to apply Run On Start setting: %s",
+                startup_error,
+            )
+    except Exception:
+        logging.getLogger(__name__).exception(
+            "Failed to apply Run On Start setting during startup"
+        )
     
     from Loading import LoadingWindow
     from UI.components.animations import WindowAnimator

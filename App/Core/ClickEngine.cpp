@@ -30,6 +30,8 @@ constexpr std::uint64_t kDebugSampleClicks = 1000;
 constexpr int kLeftButton = 0;
 constexpr int kRightButton = 1;
 constexpr int kMiddleButton = 2;
+constexpr int kX1Button = 3;
+constexpr int kX2Button = 4;
 std::atomic<ClickCallback> g_pressCallback{nullptr};
 std::atomic<ClickCallback> g_releaseCallback{nullptr};
 std::atomic<std::uint64_t> g_clickCount{0};
@@ -147,6 +149,9 @@ DWORD buttonDownFlag(int button) noexcept {
         return MOUSEEVENTF_RIGHTDOWN;
     case kMiddleButton:
         return MOUSEEVENTF_MIDDLEDOWN;
+    case kX1Button:
+    case kX2Button:
+        return MOUSEEVENTF_XDOWN;
     default:
         return MOUSEEVENTF_LEFTDOWN;
     }
@@ -158,12 +163,30 @@ DWORD buttonUpFlag(int button) noexcept {
         return MOUSEEVENTF_RIGHTUP;
     case kMiddleButton:
         return MOUSEEVENTF_MIDDLEUP;
+    case kX1Button:
+    case kX2Button:
+        return MOUSEEVENTF_XUP;
     default:
         return MOUSEEVENTF_LEFTUP;
     }
 }
 
+<<<<<<< HEAD
 bool sendButtonEvent(DWORD flags) noexcept {
+=======
+DWORD buttonData(int button) noexcept {
+    return button == kX2Button ? XBUTTON2 : XBUTTON1;
+}
+
+bool sendButtonEvent(DWORD flags, DWORD data = 0) noexcept {
+    if ((flags & (MOUSEEVENTF_XDOWN | MOUSEEVENTF_XUP)) != 0) {
+        INPUT input{};
+        input.type = INPUT_MOUSE;
+        input.mi.dwFlags = flags;
+        input.mi.mouseData = data;
+        return ::SendInput(1, &input, sizeof(INPUT)) == 1;
+    }
+>>>>>>> main
     // Legacy mouse_event is accepted by some applications that ignore
     // SendInput-injected button messages, including some game clients.
     ::mouse_event(flags, 0, 0, 0, 0);
@@ -617,13 +640,13 @@ void ClickEngine::sendClick(std::uint32_t clickCount, int offsetX, int offsetY) 
         }
 
         for (std::uint32_t i = 0; i < clickCount && running_.load(std::memory_order_acquire); ++i) {
-            if (!sendButtonEvent(buttonDownFlag(button))) {
+            if (!sendButtonEvent(buttonDownFlag(button), buttonData(button))) {
                 return;
             }
             pendingPressCallbacks_.fetch_add(1, std::memory_order_release);
             callbackCv_.notify_one();
             waitForMicroseconds(holdUs, frequency_);
-            sendButtonEvent(buttonUpFlag(button));
+            sendButtonEvent(buttonUpFlag(button), buttonData(button));
             pendingReleaseCallbacks_.fetch_add(1, std::memory_order_release);
             callbackCv_.notify_one();
             if (g_abortRequested.load(std::memory_order_acquire)) {
@@ -644,12 +667,20 @@ void ClickEngine::sendClick(std::uint32_t clickCount, int offsetX, int offsetY) 
     ::SetCursorPos(targetX, targetY);
     const int button = mouseButton_.load(std::memory_order_relaxed);
     for (std::uint32_t i = 0; i < clickCount; ++i) {
+<<<<<<< HEAD
         if (!sendButtonEvent(buttonDownFlag(button))) {
+=======
+        if (!sendButtonEvent(buttonDownFlag(button), buttonData(button))) {
+>>>>>>> main
             break;
         }
         pendingPressCallbacks_.fetch_add(1, std::memory_order_release);
         callbackCv_.notify_one();
+<<<<<<< HEAD
         sendButtonEvent(buttonUpFlag(button));
+=======
+        sendButtonEvent(buttonUpFlag(button), buttonData(button));
+>>>>>>> main
         pendingReleaseCallbacks_.fetch_add(1, std::memory_order_release);
         callbackCv_.notify_one();
     }
@@ -726,15 +757,17 @@ CLICKENGINE_API bool smooth_move_cursor(int start_x, int start_y, int end_x, int
 
 CLICKENGINE_API bool mouse_button_down(int button) {
     g_abortRequested.store(false, std::memory_order_release);
-    return sendButtonEvent(buttonDownFlag(button));
+    return sendButtonEvent(buttonDownFlag(button), buttonData(button));
 }
 
 CLICKENGINE_API bool mouse_button_up(int button) {
-    return sendButtonEvent(buttonUpFlag(button));
+    return sendButtonEvent(buttonUpFlag(button), buttonData(button));
 }
 
 CLICKENGINE_API void release_all_mouse_buttons() {
     sendButtonEvent(MOUSEEVENTF_LEFTUP);
     sendButtonEvent(MOUSEEVENTF_RIGHTUP);
     sendButtonEvent(MOUSEEVENTF_MIDDLEUP);
+    sendButtonEvent(MOUSEEVENTF_XUP, XBUTTON1);
+    sendButtonEvent(MOUSEEVENTF_XUP, XBUTTON2);
 }

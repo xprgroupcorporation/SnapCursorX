@@ -1,18 +1,25 @@
 {
     "keybinds": {
         "See_Setup_Info": "CTRL+I",
+<<<<<<< HEAD
         "Execute": "ALT+F",
         "Stop": "ALT+F",
+=======
+        "Execute": "ALT+X",
+        "Stop": "ALT+X",
+>>>>>>> main
         "Register_Click_Position": "ALT+S",
+        "Record_Input_Sandbox": "CTRL+R",
         "New_Marker_Sandbox": "CTRL+N",
         "New_Keybind_Sandbox": "CTRL+M",
         "Quick_Save": "CTRL+S",
         "Recover_Window_Position": "ALT+Z",
-        "Save_Close_Setup": "ALT+X",
+        "Save_Close_Setup": "ALT+F",
         "Kill_Switch": "ALT+C"
     },
     "general": {
         "Run_On_Start": false,
+        "Allow_Update_Checks": true,
         "Performance_Mode_Trigger_MS": 99
     },
     "visual": {
