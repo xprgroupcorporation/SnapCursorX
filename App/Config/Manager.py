@@ -58,6 +58,7 @@ class ConfigManager:
             "See_Setup_Info": "CTRL+I",
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             "Execute": "F2",
             "Stop": "F3",
             "Register_Click_Position": "F4",
@@ -70,13 +71,18 @@ class ConfigManager:
 =======
 =======
 >>>>>>> main
+=======
+>>>>>>> main
             "Execute": "ALT+F",
             "Stop": "ALT+F",
             "Register_Click_Position": "ALT+S",
             "Record_Input_Sandbox": "CTRL+R",
             "New_Marker_Sandbox": "CTRL+N",
 <<<<<<< HEAD
+<<<<<<< HEAD
             "New_Keybind_Sandbox": "CTRL+M",
+=======
+>>>>>>> main
 =======
 >>>>>>> main
             "Quick_Save": "CTRL+S",
@@ -84,6 +90,9 @@ class ConfigManager:
             "Save_Close_Setup": "ALT+X",
             "Kill_Switch": "ALT+C"
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> main
+=======
 >>>>>>> main
 =======
 >>>>>>> main

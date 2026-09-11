@@ -41,6 +41,7 @@ def _configure_logging():
         # Logging must never prevent the application from starting.
         pass
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 
 def _configure_logging():
@@ -57,6 +58,8 @@ def _configure_logging():
     except Exception:
         # Logging must never prevent the application from starting.
         pass
+=======
+>>>>>>> main
 =======
 >>>>>>> main
 

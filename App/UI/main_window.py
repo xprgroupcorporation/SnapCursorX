@@ -365,7 +365,11 @@ class KeybindCaptureDialog(QtWidgets.QDialog):
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     def __init__(self, current_binding="", parent=None):
+=======
+    def __init__(self, current_binding="", parent=None, single_key_only=False):
+>>>>>>> main
 =======
     def __init__(self, current_binding="", parent=None, single_key_only=False):
 >>>>>>> main
@@ -1048,6 +1052,7 @@ class ControlPanel(QtWidgets.QMainWindow):
         if self.isVisible():
             QtCore.QTimer.singleShot(0, self._start_update_check)
 <<<<<<< HEAD
+<<<<<<< HEAD
 
     def _handle_titlebar_close(self):
         """Close the current panel or return to the setup context."""
@@ -1058,6 +1063,8 @@ class ControlPanel(QtWidgets.QMainWindow):
             self.show_home()
             return
         self.close_all()
+=======
+>>>>>>> main
 =======
 >>>>>>> main
 
@@ -2297,6 +2304,12 @@ class ControlPanel(QtWidgets.QMainWindow):
             return
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        if not self._update_checks_enabled():
+            self._set_updates_disabled_state()
+            return
+>>>>>>> main
 =======
         if not self._update_checks_enabled():
             self._set_updates_disabled_state()
@@ -2388,6 +2401,12 @@ class ControlPanel(QtWidgets.QMainWindow):
             return
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        if not self._update_checks_enabled():
+            self._set_updates_disabled_state()
+            return
+>>>>>>> main
 =======
         if not self._update_checks_enabled():
             self._set_updates_disabled_state()

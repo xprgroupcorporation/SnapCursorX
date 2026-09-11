@@ -561,7 +561,11 @@ class SandboxHandleWidget(QtWidgets.QWidget):
             )
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             stroke = QtGui.QPen(QtGui.QColor(0, 0, 0, 220), 0.5)
+=======
+            stroke = QtGui.QPen(QtGui.QColor(0, 0, 0, 220), 0.8)
+>>>>>>> main
 =======
             stroke = QtGui.QPen(QtGui.QColor(0, 0, 0, 220), 0.8)
 >>>>>>> main

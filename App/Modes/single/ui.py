@@ -870,9 +870,13 @@ class SingleModeUIMixin:
         left_col.addSpacing(1)
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         left_col.addWidget(self._click_target_card)
         left_col.addSpacing(1)
         left_col.addLayout(row(anti_lbl, self._anti_check))
+=======
+        left_col.addWidget(self._execute_mode_stack)
+>>>>>>> main
 =======
         left_col.addWidget(self._execute_mode_stack)
 >>>>>>> main
@@ -914,9 +918,14 @@ class SingleModeUIMixin:
         right_col.addSpacing(2)
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         right_col.addLayout(row(mouse_button_lbl, self._mouse_button_combo))
         right_col.addSpacing(1)
         right_col.addLayout(row(hold_lbl, self._hold_spin))    
+=======
+        right_col.addWidget(input_type_title)
+        right_col.addWidget(self._input_type_card)
+>>>>>>> main
 =======
         right_col.addWidget(input_type_title)
         right_col.addWidget(self._input_type_card)
@@ -1035,11 +1044,15 @@ class SingleModeUIMixin:
             marker_widget = marker_info["marker"]
 
 <<<<<<< HEAD
+<<<<<<< HEAD
             if keyboard_input:
                 marker_widget.hide()
                 overlay.update_hit_region()
                 overlay.hide_position_indicator()
             elif scroll_input:
+=======
+            if keyboard_input or scroll_input:
+>>>>>>> main
 =======
             if keyboard_input or scroll_input:
 >>>>>>> main
@@ -1050,7 +1063,11 @@ class SingleModeUIMixin:
                 marker_widget.hide()
                 overlay.update_hit_region()
 <<<<<<< HEAD
+<<<<<<< HEAD
                 # Reuse Mouse Follow's separate, click-through indicator.
+=======
+                # Use the same click-through follow indicator as other non-mouse inputs.
+>>>>>>> main
 =======
                 # Use the same click-through follow indicator as other non-mouse inputs.
 >>>>>>> main

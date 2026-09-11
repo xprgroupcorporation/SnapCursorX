@@ -697,7 +697,12 @@ class SingleModeLogicMixin:
 
     def _follow_visual_updates_enabled(self):
 <<<<<<< HEAD
+<<<<<<< HEAD
         if str(self.data.get("settings", {}).get("input_type", "mouse") or "mouse").lower() == "scroll":
+=======
+        input_type = str(self.data.get("settings", {}).get("input_type", "mouse") or "mouse").lower()
+        if input_type in ("scroll", "keyboard"):
+>>>>>>> main
 =======
         input_type = str(self.data.get("settings", {}).get("input_type", "mouse") or "mouse").lower()
         if input_type in ("scroll", "keyboard"):
@@ -915,7 +920,11 @@ class SingleModeLogicMixin:
             if overlay:
                 overlay.hide_position_indicator()
 <<<<<<< HEAD
+<<<<<<< HEAD
         elif overlay and input_type == "mouse":
+=======
+        elif overlay and input_type in ("mouse", "keyboard"):
+>>>>>>> main
 =======
         elif overlay and input_type in ("mouse", "keyboard"):
 >>>>>>> main

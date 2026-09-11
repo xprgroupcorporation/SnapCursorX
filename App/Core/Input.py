@@ -247,7 +247,11 @@ class NativeClickController(QtCore.QObject):
     stopped = QtCore.Signal()
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     def __init__(self, delay_us: int, x: int, y: int, follow_mouse: bool, click_randomness: bool, hold_ms: int = 0, mouse_button: str = "left", input_type: str = "mouse", scroll_direction: str = "up", keyboard_key_name: str = "", keyboard_key_vk: int = 0, keyboard_uppercase: bool = False, enable_click_feedback: bool = True, parent=None):
+=======
+    def __init__(self, delay_us: int, x: int, y: int, follow_mouse: bool, click_randomness: bool, hold_ms: int = 0, mouse_button: str = "left", input_type: str = "mouse", scroll_direction: str = "up", scroll_time_ms: int = 100, keyboard_key_name: str = "", keyboard_key_vk: int = 0, keyboard_uppercase: bool = False, enable_click_feedback: bool = True, parent=None):
+>>>>>>> main
 =======
     def __init__(self, delay_us: int, x: int, y: int, follow_mouse: bool, click_randomness: bool, hold_ms: int = 0, mouse_button: str = "left", input_type: str = "mouse", scroll_direction: str = "up", scroll_time_ms: int = 100, keyboard_key_name: str = "", keyboard_key_vk: int = 0, keyboard_uppercase: bool = False, enable_click_feedback: bool = True, parent=None):
 >>>>>>> main

@@ -3,8 +3,13 @@
         "See_Setup_Info": "CTRL+I",
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "Execute": "ALT+F",
         "Stop": "ALT+F",
+=======
+        "Execute": "ALT+X",
+        "Stop": "ALT+X",
+>>>>>>> main
 =======
         "Execute": "ALT+X",
         "Stop": "ALT+X",

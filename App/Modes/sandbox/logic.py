@@ -1696,7 +1696,11 @@ class SandboxModeLogicMixin:
             f"Set Pos. ({keybinds.get('Register_Click_Position', 'F4')}) • "
             f"Info ({keybinds.get('See_Setup_Info', 'CTRL+I')}) • +Marker ({keybinds.get('New_Marker_Sandbox', 'F5')}) •\n"
 <<<<<<< HEAD
+<<<<<<< HEAD
             f"+Keybind ({keybinds.get('New_Keybind_Sandbox', 'F6')}) • Save ({keybinds.get('Quick_Save', 'F7')}) • "
+=======
+            f"Save ({keybinds.get('Quick_Save', 'F7')}) • "
+>>>>>>> main
 =======
             f"Save ({keybinds.get('Quick_Save', 'F7')}) • "
 >>>>>>> main
