@@ -56,46 +56,6 @@ class ConfigManager:
     DEFAULT = {
         "keybinds": {
             "See_Setup_Info": "CTRL+I",
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            "Execute": "F2",
-            "Stop": "F3",
-            "Register_Click_Position": "F4",
-            "New_Marker_Sandbox": "F5",
-            "New_Keybind_Sandbox": "F6",
-            "Quick_Save": "F7",
-            "Recover_Window_Position": "F8",
-            "Save_Close_Setup": "F9",
-            "Kill_Switch": "F10"
-=======
-=======
->>>>>>> main
-=======
->>>>>>> main
-            "Execute": "ALT+F",
-            "Stop": "ALT+F",
-            "Register_Click_Position": "ALT+S",
-            "Record_Input_Sandbox": "CTRL+R",
-            "New_Marker_Sandbox": "CTRL+N",
-<<<<<<< HEAD
-<<<<<<< HEAD
-            "New_Keybind_Sandbox": "CTRL+M",
-=======
->>>>>>> main
-=======
->>>>>>> main
-            "Quick_Save": "CTRL+S",
-            "Recover_Window_Position": "ALT+Z",
-            "Save_Close_Setup": "ALT+X",
-            "Kill_Switch": "ALT+C"
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> main
-=======
->>>>>>> main
-=======
->>>>>>> main
         },
         "general": {
             "Run_On_Start": False,

@@ -1,4 +1,4 @@
-﻿from PySide6 import QtWidgets, QtCore
+from PySide6 import QtWidgets, QtCore
 import copy
 import ctypes
 from ctypes import wintypes
@@ -696,17 +696,8 @@ class SingleModeLogicMixin:
         self._on_settings_changed()
 
     def _follow_visual_updates_enabled(self):
-<<<<<<< HEAD
-<<<<<<< HEAD
-        if str(self.data.get("settings", {}).get("input_type", "mouse") or "mouse").lower() == "scroll":
-=======
         input_type = str(self.data.get("settings", {}).get("input_type", "mouse") or "mouse").lower()
         if input_type in ("scroll", "keyboard"):
->>>>>>> main
-=======
-        input_type = str(self.data.get("settings", {}).get("input_type", "mouse") or "mouse").lower()
-        if input_type in ("scroll", "keyboard"):
->>>>>>> main
             return True
         if not self._click_target_is_follow():
             return False
@@ -919,15 +910,7 @@ class SingleModeLogicMixin:
                 overlay.update_hit_region()
             if overlay:
                 overlay.hide_position_indicator()
-<<<<<<< HEAD
-<<<<<<< HEAD
-        elif overlay and input_type == "mouse":
-=======
         elif overlay and input_type in ("mouse", "keyboard"):
->>>>>>> main
-=======
-        elif overlay and input_type in ("mouse", "keyboard"):
->>>>>>> main
             overlay.set_marker_execution_mode(
                 True,
                 keep_visible=True,

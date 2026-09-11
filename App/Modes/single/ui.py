@@ -868,21 +868,7 @@ class SingleModeUIMixin:
         left_col.addSpacing(1)
         left_col.addWidget(self._execute_mode_title)
         left_col.addSpacing(1)
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-        left_col.addWidget(self._click_target_card)
-        left_col.addSpacing(1)
-        left_col.addLayout(row(anti_lbl, self._anti_check))
-=======
         left_col.addWidget(self._execute_mode_stack)
->>>>>>> main
-=======
-        left_col.addWidget(self._execute_mode_stack)
->>>>>>> main
-=======
-        left_col.addWidget(self._execute_mode_stack)
->>>>>>> main
         left_col.addStretch()
 
         failsafe_lbl = QtWidgets.QLabel("Screen Edge Failsafe:")
@@ -916,24 +902,8 @@ class SingleModeUIMixin:
         right_col.addSpacing(2)
         right_col.addWidget(divider())
         right_col.addSpacing(2)
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-        right_col.addLayout(row(mouse_button_lbl, self._mouse_button_combo))
-        right_col.addSpacing(1)
-        right_col.addLayout(row(hold_lbl, self._hold_spin))    
-=======
         right_col.addWidget(input_type_title)
         right_col.addWidget(self._input_type_card)
->>>>>>> main
-=======
-        right_col.addWidget(input_type_title)
-        right_col.addWidget(self._input_type_card)
->>>>>>> main
-=======
-        right_col.addWidget(input_type_title)
-        right_col.addWidget(self._input_type_card)
->>>>>>> main
         right_col.addStretch()
 
         split_row = QtWidgets.QHBoxLayout()
@@ -1043,34 +1013,14 @@ class SingleModeUIMixin:
             marker_info   = overlay.markers[0]
             marker_widget = marker_info["marker"]
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-            if keyboard_input:
-                marker_widget.hide()
-                overlay.update_hit_region()
-                overlay.hide_position_indicator()
-            elif scroll_input:
-=======
             if keyboard_input or scroll_input:
->>>>>>> main
-=======
-            if keyboard_input or scroll_input:
->>>>>>> main
                 marker_info["x"] = x
                 marker_info["y"] = y
                 marker_widget.set_interactive(False)
                 marker_widget.set_execution_visual(False)
                 marker_widget.hide()
                 overlay.update_hit_region()
-<<<<<<< HEAD
-<<<<<<< HEAD
-                # Reuse Mouse Follow's separate, click-through indicator.
-=======
                 # Use the same click-through follow indicator as other non-mouse inputs.
->>>>>>> main
-=======
-                # Use the same click-through follow indicator as other non-mouse inputs.
->>>>>>> main
                 overlay.show_position_indicator(x, y)
             elif self._has_position() and not self._executing and not follow_enabled:
                 marker_widget.move(x - marker_widget.radius,
