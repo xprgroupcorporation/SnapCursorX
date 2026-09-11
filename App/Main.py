@@ -40,6 +40,7 @@ def _configure_logging():
     except Exception:
         # Logging must never prevent the application from starting.
         pass
+<<<<<<< HEAD
 
 def _configure_logging():
     """Keep startup/background failures available after a silent crash."""
@@ -55,6 +56,8 @@ def _configure_logging():
     except Exception:
         # Logging must never prevent the application from starting.
         pass
+=======
+>>>>>>> main
 
 
 def _configure_windows_dpi():

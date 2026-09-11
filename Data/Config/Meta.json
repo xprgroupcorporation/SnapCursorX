@@ -1,6 +1,19 @@
 {
     "keybinds": {
+<<<<<<< HEAD
         "See_Setup_Info": "CTRL+I"
+=======
+        "See_Setup_Info": "CTRL+I",
+        "Execute": "ALT+X",
+        "Stop": "ALT+X",
+        "Register_Click_Position": "ALT+S",
+        "Record_Input_Sandbox": "CTRL+R",
+        "New_Marker_Sandbox": "CTRL+N",
+        "Quick_Save": "CTRL+S",
+        "Recover_Window_Position": "ALT+Z",
+        "Save_Close_Setup": "ALT+F",
+        "Kill_Switch": "ALT+C"
+>>>>>>> main
     },
     "general": {
         "Run_On_Start": false,

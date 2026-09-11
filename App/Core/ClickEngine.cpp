@@ -174,8 +174,11 @@ DWORD buttonUpFlag(int button) noexcept {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 bool sendButtonEvent(DWORD flags) noexcept {
 =======
+=======
+>>>>>>> main
 =======
 >>>>>>> main
 =======
@@ -194,6 +197,9 @@ bool sendButtonEvent(DWORD flags, DWORD data = 0) noexcept {
     }
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> main
+=======
 >>>>>>> main
 =======
 >>>>>>> main
@@ -682,7 +688,11 @@ void ClickEngine::sendClick(std::uint32_t clickCount, int offsetX, int offsetY) 
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         if (!sendButtonEvent(buttonDownFlag(button))) {
+=======
+        if (!sendButtonEvent(buttonDownFlag(button), buttonData(button))) {
+>>>>>>> main
 =======
         if (!sendButtonEvent(buttonDownFlag(button), buttonData(button))) {
 >>>>>>> main
@@ -699,7 +709,11 @@ void ClickEngine::sendClick(std::uint32_t clickCount, int offsetX, int offsetY) 
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         sendButtonEvent(buttonUpFlag(button));
+=======
+        sendButtonEvent(buttonUpFlag(button), buttonData(button));
+>>>>>>> main
 =======
         sendButtonEvent(buttonUpFlag(button), buttonData(button));
 >>>>>>> main
