@@ -13,6 +13,7 @@ from UI.components.spinbox import HorizontalStepSpinBox
 
 CLICK_RANDOMNESS_KEY = "click_randomness"
 MOUSE_BEHAVIOR_KEY = "mouse_behavior"
+MOUSE_BEHAVIOR_DEFAULT = "default"
 MOUSE_BEHAVIOR_OPTIONS = [
     ("Default", "default"),
     ("Teleport", "teleport"),
@@ -124,6 +125,22 @@ class InspectorSplitter(QtWidgets.QSplitter):
         return InspectorSplitterHandle(self.orientation(), self)
 
 
+class SandboxHierarchyTree(QtWidgets.QTreeWidget):
+    orderChanged = QtCore.Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setDragEnabled(True)
+        self.setAcceptDrops(True)
+        self.setDropIndicatorShown(True)
+        self.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
+        self.setDefaultDropAction(QtCore.Qt.MoveAction)
+
+    def dropEvent(self, event):
+        super().dropEvent(event)
+        self.orderChanged.emit()
+
+
 class SandboxCreateObjectDialog(QtWidgets.QDialog):
     def __init__(self, allowed_types, target_options=None, parent=None):
         super().__init__(parent)
@@ -148,10 +165,17 @@ class SandboxCreateObjectDialog(QtWidgets.QDialog):
         layout.addWidget(title)
         self._type_combo = QtWidgets.QComboBox()
         self._type_combo.setStyleSheet("color: white; background: rgba(0,0,0,90); border: none; border-radius: 4px; padding: 4px;")
-        for node_type in allowed_types:
-            self._type_combo.addItem(node_type.title(), node_type)
+        for entry in allowed_types:
+            if isinstance(entry, (tuple, list)):
+                label, node_type = entry
+            else:
+                node_type = entry
+                label = str(entry).replace("_", " ").title()
+            self._type_combo.addItem(str(label), node_type)
+        self._type_combo.setFixedHeight(26)
         layout.addWidget(self._type_combo)
         self._name_edit = QtWidgets.QLineEdit()
+        self._name_edit.setFixedHeight(26)
         self._name_edit.setPlaceholderText("Object name")
         self._name_edit.setStyleSheet("color: white; background: rgba(0,0,0,90); border: none; border-radius: 4px; padding: 5px;")
         layout.addWidget(self._name_edit)
@@ -215,6 +239,7 @@ class SandboxCreateObjectDialog(QtWidgets.QDialog):
         self._extra_widgets = {}
 
         if node_type == "keybind":
+            x, y = win32api.GetCursorPos()
             keybind_value = QtWidgets.QLabel("Not Set")
             keybind_value.setAlignment(QtCore.Qt.AlignCenter)
             keybind_value.setStyleSheet("color: white; background: rgba(0,0,0,92); border: none; border-radius: 4px; font: 8pt 'Consolas'; padding: 4px 6px;")
@@ -237,18 +262,60 @@ class SandboxCreateObjectDialog(QtWidgets.QDialog):
             desc = QtWidgets.QLineEdit()
             desc.setPlaceholderText("Description")
             desc.setStyleSheet(self._editor_style())
-            target = self._make_combo([("None", "")] + self._target_options)
-            teleport_back = self._make_check(True)
+            pos_x = self._make_spin(x)
+            pos_y = self._make_spin(y)
+            index = self._make_spin(10, 1, 99999)
+            index.setSingleStep(10)
             self._extra_widgets = {
                 "keybind": keybind_value,
                 "description": desc,
-                "target_id": target,
-                "teleport_back": teleport_back,
+                "x": pos_x,
+                "y": pos_y,
+                "index": index,
             }
             self._add_form_row("Keybind", keybind_host)
             self._add_form_row("Description", desc)
-            self._add_form_row("Target", target)
-            self._add_form_row("Teleport Back", teleport_back)
+            self._add_form_row("Position X", pos_x)
+            self._add_form_row("Position Y", pos_y)
+            self._add_form_row("Index", index)
+            return
+
+        if node_type == "scroll_marker":
+            direction = self._make_combo([("Up", "up"), ("Down", "down"), ("Left", "left"), ("Right", "right")])
+            duration = self._make_spin(100, 0)
+            index = self._make_spin(10, 1, 99999)
+            index.setSingleStep(10)
+            self._extra_widgets = {"scroll_direction": direction, "scroll_time_ms": duration, "index": index}
+            self._add_form_row("Input Direction", direction)
+            self._add_form_row("Scroll Time (ms)", duration)
+            self._add_form_row("Index", index)
+            return
+
+        if node_type == "keyboard_marker":
+            key_value = QtWidgets.QLabel("Not Set")
+            key_value.setAlignment(QtCore.Qt.AlignCenter)
+            key_value.setStyleSheet("color: white; background: rgba(0,0,0,92); border: none; border-radius: 4px; padding: 4px 6px;")
+            key_button = QtWidgets.QPushButton("Record")
+            key_button.setFixedWidth(58)
+            key_button.setStyleSheet("QPushButton { background: rgba(255,255,255,16); color: white; border: none; border-radius: 4px; padding: 3px 8px; }")
+            def capture_key():
+                dialog = _keybind_capture_dialog_type()("", self)
+                if dialog.exec() == QtWidgets.QDialog.Accepted:
+                    key_value.setText(dialog.binding_text().strip().lower())
+                    key_value.setProperty("captured_vk", int(getattr(dialog, "captured_vk", 0) or 0))
+            key_button.clicked.connect(capture_key)
+            host = QtWidgets.QWidget()
+            host_layout = QtWidgets.QHBoxLayout(host)
+            host_layout.setContentsMargins(0, 0, 0, 0)
+            host_layout.addWidget(key_value, 1)
+            host_layout.addWidget(key_button)
+            uppercase = self._make_check(False)
+            index = self._make_spin(10, 1, 99999)
+            index.setSingleStep(10)
+            self._extra_widgets = {"keyboard_key_name": key_value, "keyboard_uppercase": uppercase, "index": index}
+            self._add_form_row("Key", host)
+            self._add_form_row("Uppercase", uppercase)
+            self._add_form_row("Index", index)
             return
 
         if node_type == "marker":
@@ -309,6 +376,9 @@ class SandboxCreateObjectDialog(QtWidgets.QDialog):
                 extra[key] = "" if widget.text() == "Not Set" else widget.text().strip()
             else:
                 extra[key] = widget.text().strip()
+        if node_type == "keyboard_marker":
+            key_widget = self._extra_widgets.get("keyboard_key_name")
+            extra["keyboard_key_vk"] = int(key_widget.property("captured_vk") or 0) if key_widget is not None else 0
         return (node_type, self._name_edit.text().strip(), extra)
 
 
@@ -490,7 +560,11 @@ class SandboxHandleWidget(QtWidgets.QWidget):
                 (self.height() - text_bounds.height()) / 2.0 - text_bounds.top(),
             )
 <<<<<<< HEAD
+<<<<<<< HEAD
             stroke = QtGui.QPen(QtGui.QColor(0, 0, 0, 220), 0.5)
+=======
+            stroke = QtGui.QPen(QtGui.QColor(0, 0, 0, 220), 0.8)
+>>>>>>> main
 =======
             stroke = QtGui.QPen(QtGui.QColor(0, 0, 0, 220), 0.8)
 >>>>>>> main
@@ -624,6 +698,10 @@ class SandboxOverlayController(QtCore.QObject):
         objects = sandbox.get("objects", {})
         needed = {}
         lines = []
+        bindings_by_target = {}
+
+        def is_keybound(node_id: str):
+            return node_id in bindings_by_target
 
         def effectively_enabled(node_id: str):
             original_node_id = node_id
@@ -642,7 +720,6 @@ class SandboxOverlayController(QtCore.QObject):
                 node = parent
             return True
 
-        bindings_by_target = {}
         for keybind_id, keybind_node in objects.items():
             if keybind_node.get("type") != "keybind":
                 continue
@@ -656,9 +733,6 @@ class SandboxOverlayController(QtCore.QObject):
             if not keys:
                 return ""
             return " / ".join(keys[:2])
-
-        def is_keybound(node_id: str):
-            return node_id in bindings_by_target
 
         sequence_display_order = {}
         sequence_folder = objects.get("folder_sequence")
@@ -682,7 +756,7 @@ class SandboxOverlayController(QtCore.QObject):
                 sequence_display_order[child.get("id", "")] = str(display_order)
 
         for node_id, node in objects.items():
-            if node.get("type") == "marker" and effectively_enabled(node_id):
+            if node.get("type") == "marker" and effectively_enabled(node_id) and not is_keybound(node_id):
                 if self._execution_mode:
                     continue
                 label = target_label(node_id)
@@ -694,7 +768,7 @@ class SandboxOverlayController(QtCore.QObject):
                     label,
                     (not is_keybound(node_id) and bool(label)),
                 )
-            elif node.get("type") == "dragger" and effectively_enabled(node_id):
+            elif node.get("type") == "dragger" and effectively_enabled(node_id) and not is_keybound(node_id):
                 if self._execution_mode:
                     continue
                 start = (int(node.get("start_x", 0)), int(node.get("start_y", 0)))
@@ -705,6 +779,15 @@ class SandboxOverlayController(QtCore.QObject):
                 needed[(node_id, "start")] = (start, QtGui.QColor(255, 60, 60), label, (not is_keybound(node_id) and bool(label)))
                 needed[(node_id, "end")] = (end, QtGui.QColor(255, 140, 60), "", False)
                 lines.append({"start_x": start[0], "start_y": start[1], "end_x": end[0], "end_y": end[1]})
+            elif node.get("type") == "keybind" and effectively_enabled(node_id):
+                target = objects.get(str(node.get("target_id", "")).strip())
+                point = target if target and target.get("type") == "marker" else node
+                needed[(node_id, "center")] = (
+                    (int(point.get("x", 0)), int(point.get("y", 0))),
+                    QtGui.QColor(255, 60, 60),
+                    str(node.get("keybind", "")).strip() or "?",
+                    True,
+                )
 
         for key in list(self._handles):
             if key not in needed:
@@ -760,7 +843,7 @@ class SandboxModeUIMixin:
         self.content.setContentsMargins(6, 5, 6, 6)
         self.content.setSpacing(6)
 
-        self._tree = QtWidgets.QTreeWidget()
+        self._tree = SandboxHierarchyTree()
         self._tree.setColumnCount(2)
         self._tree.setHeaderLabels(["Hierarchy", "Info"])
         self._tree.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
@@ -770,6 +853,7 @@ class SandboxModeUIMixin:
         self._tree.header().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
         self._tree.setIndentation(14)
         self._tree.setAnimated(True)
+        self._tree.orderChanged.connect(self._on_hierarchy_reordered)
         self._update_tree_header_indicator()
         self._tree.itemSelectionChanged.connect(self._on_tree_selection_changed)
 
@@ -817,6 +901,8 @@ class SandboxModeUIMixin:
         split.setStretchFactor(0, 3)
         split.setStretchFactor(1, 2)
         split.setSizes([60, 40])
+        split.setStretchFactor(0, 6)
+        split.setStretchFactor(1, 4)
         self.content.addWidget(split, 1)
 
         bottom_card = QtWidgets.QFrame()
@@ -1000,9 +1086,15 @@ class SandboxModeUIMixin:
             node = self._node(node_id)
             if not node:
                 return
-            item = QtWidgets.QTreeWidgetItem([node.get("name", "Unnamed"), ""])
+            item = QtWidgets.QTreeWidgetItem([f"☷  {node.get('name', 'Unnamed')}", ""])
             item.setData(0, QtCore.Qt.UserRole, node_id)
             item.setIcon(0, self._node_icon(node))
+            flags = item.flags() | QtCore.Qt.ItemIsDragEnabled
+            if node.get("type") == "folder":
+                flags |= QtCore.Qt.ItemIsDropEnabled
+            else:
+                flags &= ~QtCore.Qt.ItemIsDropEnabled
+            item.setFlags(flags)
             item.setToolTip(0, self._node_info_text(node))
             warning = self._sequence_index_warnings().get(node_id)
             if warning:
@@ -1015,7 +1107,13 @@ class SandboxModeUIMixin:
                 parent_item.addChild(item)
             self._tree.setItemWidget(item, 1, self._make_tree_info_widget(node))
             if node.get("type") == "folder":
-                for child_id in node.get("children", []):
+                child_ids = list(node.get("children", []))
+                if node.get("folder_kind") == "sequence":
+                    child_ids.sort(key=lambda child_id: (
+                        int(self._node(child_id).get("index", 99999)) if self._node(child_id) else 99999,
+                        self._node(child_id).get("name", "") if self._node(child_id) else "",
+                    ))
+                for child_id in child_ids:
                     add_item(child_id, item)
                 item.setExpanded(True)
 
@@ -1035,6 +1133,45 @@ class SandboxModeUIMixin:
         self._tree.blockSignals(False)
         self._overlay_controller.set_selected(selected_id, self._selected_point_key, selected_ids)
 
+    def _on_hierarchy_reordered(self):
+        """Persist the visual tree order as parent links and sequence indexes."""
+        sandbox = self.data["sandbox"]
+        objects = sandbox.get("objects", {})
+
+        def read_item(item, parent_id=""):
+            node_id = item.data(0, QtCore.Qt.UserRole)
+            node = objects.get(node_id)
+            if not node:
+                return
+            node["parent_id"] = parent_id
+            if node.get("type") == "folder":
+                children = []
+                for row in range(item.childCount()):
+                    child = item.child(row)
+                    child_id = child.data(0, QtCore.Qt.UserRole)
+                    if child_id in objects:
+                        children.append(child_id)
+                        read_item(child, node_id)
+                node["children"] = children
+
+        root_ids = []
+        for row in range(self._tree.topLevelItemCount()):
+            item = self._tree.topLevelItem(row)
+            node_id = item.data(0, QtCore.Qt.UserRole)
+            if node_id in objects:
+                root_ids.append(node_id)
+                read_item(item)
+        sandbox["root_ids"] = root_ids
+
+        sequence = objects.get("folder_sequence")
+        if sequence:
+            for row, child_id in enumerate(sequence.get("children", []), 1):
+                child = objects.get(child_id)
+                if child and child.get("type") in ("marker", "dragger", "keybind"):
+                    child["index"] = row * 10
+        self._mark_changed()
+        self._refresh_all()
+
     def _build_multi_properties(self, nodes):
         node_ids = [node["id"] for node in nodes]
         names = ", ".join(node.get("name", "Unnamed") for node in nodes)
@@ -1051,15 +1188,16 @@ class SandboxModeUIMixin:
         self._add_multi_checkbox_row("Enabled", node_ids, nodes, "enabled")
 
         if node_type == "keybind":
-            self._add_multi_combo_row(
-                "Target Marker",
-                node_ids,
-                nodes,
-                "target_id",
-                [(text, target_id) for target_id, text in self._sandbox_target_options("")]
-            )
+            self._add_multi_numeric_row("Index", node_ids, nodes, "index")
+            self._add_multi_numeric_row("Position X", node_ids, nodes, "x")
+            self._add_multi_numeric_row("Position Y", node_ids, nodes, "y")
+            self._add_multi_numeric_row("Delay", node_ids, nodes, "click_delay_ms")
+            self._add_multi_numeric_row("Hold", node_ids, nodes, "mouse_hold_ms")
+            self._add_multi_checkbox_row("Click Randomness", node_ids, nodes, CLICK_RANDOMNESS_KEY)
+            self._add_multi_combo_row("Mouse Button", node_ids, nodes, "mouse_button", [("Left", "left"), ("Right", "right"), ("Middle", "middle")])
+            self._add_multi_combo_row("Mouse Behavior", node_ids, nodes, MOUSE_BEHAVIOR_KEY, MOUSE_BEHAVIOR_OPTIONS)
+            self._add_multi_checkbox_row("Go Back", node_ids, nodes, "teleport_back")
             self._add_multi_text_row("Description", node_ids, nodes, "description")
-            self._add_multi_checkbox_row("Teleport Back", node_ids, nodes, "teleport_back")
             return
 
         if node_type == "marker":
@@ -1114,6 +1252,8 @@ class SandboxModeUIMixin:
             self._build_folder_properties(node)
         elif node_type == "keybind":
             self._build_keybind_properties(node)
+        elif node_type in ("scroll_marker", "keyboard_marker"):
+            self._build_input_marker_properties(node)
         elif node_type == "marker":
             self._build_marker_properties(node)
         elif node_type == "dragger":
@@ -1185,22 +1325,100 @@ class SandboxModeUIMixin:
         target_combo.setStyleSheet(self._combo_style())
         for target_id, text in self._sandbox_target_options(node["id"]):
             target_combo.addItem(text, target_id)
-        idx = target_combo.findData(node.get("target_id", ""))
-        target_combo.setCurrentIndex(0 if idx < 0 else idx)
+        target_index = target_combo.findData(node.get("target_id", ""))
+        target_combo.setCurrentIndex(0 if target_index < 0 else target_index)
         target_combo.currentIndexChanged.connect(lambda _=0, combo=target_combo, node_id=node["id"]: self._set_node_value(node_id, "target_id", combo.currentData() or ""))
         self._add_property_row("Target Marker", target_combo)
+
+        index_spin = HorizontalStepSpinBox()
+        index_spin.setRange(1, 99999)
+        index_spin.setSingleStep(10)
+        index_spin.setKeyboardTracking(False)
+        index_spin.setValue(int(node.get("index", 10)))
+        index_spin.setStyleSheet(self._spin_style())
+        index_spin.valueChanged.connect(lambda value, node_id=node["id"]: self._set_node_value(node_id, "index", int(value)))
+        self._add_property_row("Index", index_spin)
 
         desc_edit = QtWidgets.QLineEdit(node.get("description", ""))
         desc_edit.setStyleSheet(self._line_edit_style())
         desc_edit.editingFinished.connect(lambda node_id=node["id"], box=desc_edit: self._commit_line_edit_value(node_id, "description", box))
         self._add_property_row("Description", desc_edit)
-        teleport_back = QtWidgets.QCheckBox()
-        teleport_back.setChecked(bool(node.get("teleport_back", False)))
-        teleport_back.setStyleSheet("QCheckBox { color: white; }")
-        teleport_back.stateChanged.connect(lambda _=0, box=teleport_back, node_id=node["id"]: self._set_node_value(node_id, "teleport_back", box.isChecked()))
-        self._add_property_row("Teleport Back", teleport_back)
-        self._properties_layout.addWidget(self._note_label("When execution is active, this key instantly triggers its assigned marker or dragger."))
-        self._properties_layout.addWidget(self._note_label("Teleport Back restores immediately after the current trigger finishes. While you keep spamming the key, SnapCursorX keeps the same saved return position and does not replace it from points near the marker, so it avoids teleport-back drift."))
+        for key, label_text in (("x", "Position X"), ("y", "Position Y")):
+            spin = HorizontalStepSpinBox()
+            spin.setRange(0, 99999)
+            spin.setKeyboardTracking(False)
+            spin.setValue(int(node.get(key, 0)))
+            spin.setStyleSheet(self._spin_style())
+            spin.valueChanged.connect(lambda value, node_id=node["id"], data_key=key: self._set_node_value(node_id, data_key, int(value)))
+            self._add_property_row(label_text, spin)
+        randomness = QtWidgets.QCheckBox()
+        randomness.setChecked(read_click_randomness(node, True))
+        randomness.setStyleSheet("QCheckBox { color: white; }")
+        randomness.stateChanged.connect(lambda _=0, box=randomness, node_id=node["id"]: self._set_node_value(node_id, CLICK_RANDOMNESS_KEY, box.isChecked()))
+        self._add_property_row("Click Randomness", randomness)
+        for key, label_text, minimum in (("click_delay_ms", "Delay", 1), ("mouse_hold_ms", "Hold", 0)):
+            spin = HorizontalStepSpinBox()
+            spin.setRange(minimum, 99999)
+            spin.setKeyboardTracking(False)
+            spin.setValue(int(node.get(key, 0)))
+            spin.setStyleSheet(self._spin_style())
+            spin.valueChanged.connect(lambda value, node_id=node["id"], data_key=key: self._set_node_value(node_id, data_key, int(value)))
+            self._add_property_row(label_text, spin)
+        button = QtWidgets.QComboBox()
+        button.setStyleSheet(self._combo_style())
+        for label, value in (("Left", "left"), ("Right", "right"), ("Middle", "middle")):
+            button.addItem(label, value)
+        button.setCurrentIndex(max(0, button.findData(node.get("mouse_button", "left"))))
+        button.currentIndexChanged.connect(lambda _=0, box=button, node_id=node["id"]: self._set_node_value(node_id, "mouse_button", box.currentData()))
+        self._add_property_row("Mouse Button", button)
+        behavior = QtWidgets.QComboBox()
+        behavior.setStyleSheet(self._combo_style())
+        for label, value in MOUSE_BEHAVIOR_OPTIONS:
+            behavior.addItem(label, value)
+        behavior.setCurrentIndex(max(0, behavior.findData(read_mouse_behavior(node, MOUSE_BEHAVIOR_DEFAULT))))
+        behavior.currentIndexChanged.connect(lambda _=0, box=behavior, node_id=node["id"]: self._set_node_value(node_id, MOUSE_BEHAVIOR_KEY, box.currentData()))
+        self._add_property_row("Mouse Behavior", behavior)
+        restore = QtWidgets.QCheckBox()
+        restore.setChecked(bool(node.get("teleport_back", True)))
+        restore.setStyleSheet("QCheckBox { color: white; }")
+        restore.stateChanged.connect(lambda _=0, box=restore, node_id=node["id"]: self._set_node_value(node_id, "teleport_back", box.isChecked()))
+        self._add_property_row("Go Back", restore)
+        self._properties_layout.addWidget(self._note_label("During sequence execution, this marker waits until its assigned key is pressed, then continues to the next index."))
+
+    def _build_input_marker_properties(self, node: dict):
+        index_spin = HorizontalStepSpinBox()
+        index_spin.setRange(1, 99999)
+        index_spin.setSingleStep(10)
+        index_spin.setValue(int(node.get("index", 10)))
+        index_spin.setStyleSheet(self._spin_style())
+        index_spin.valueChanged.connect(lambda value, node_id=node["id"]: self._set_node_value(node_id, "index", int(value)))
+        self._add_property_row("Index", index_spin)
+        if node.get("type") == "scroll_marker":
+            direction = QtWidgets.QComboBox()
+            direction.setStyleSheet(self._combo_style())
+            for label, value in (("Up", "up"), ("Down", "down"), ("Left", "left"), ("Right", "right")):
+                direction.addItem(label, value)
+            direction.setCurrentIndex(max(0, direction.findData(node.get("scroll_direction", "up"))))
+            direction.currentIndexChanged.connect(lambda _=0, box=direction, node_id=node["id"]: self._set_node_value(node_id, "scroll_direction", box.currentData() or "up"))
+            self._add_property_row("Input Direction", direction)
+            duration = HorizontalStepSpinBox()
+            duration.setRange(0, 99999)
+            duration.setValue(int(node.get("scroll_time_ms", 100)))
+            duration.setStyleSheet(self._spin_style())
+            duration.valueChanged.connect(lambda value, node_id=node["id"]: self._set_node_value(node_id, "scroll_time_ms", int(value)))
+            self._add_property_row("Scroll Time (ms)", duration)
+            self._properties_layout.addWidget(self._note_label("Scroll markers use only direction and scroll duration."))
+            return
+        key_button = QtWidgets.QPushButton(node.get("keyboard_key_name", "") or "Record Key")
+        key_button.setStyleSheet(self._button_style())
+        key_button.clicked.connect(lambda _=False, node_id=node["id"]: self._capture_sandbox_marker_key(node_id))
+        self._add_property_row("Key", key_button)
+        uppercase = QtWidgets.QCheckBox()
+        uppercase.setChecked(bool(node.get("keyboard_uppercase", False)))
+        uppercase.setStyleSheet("QCheckBox { color: white; }")
+        uppercase.stateChanged.connect(lambda _=0, box=uppercase, node_id=node["id"]: self._set_node_value(node_id, "keyboard_uppercase", box.isChecked()))
+        self._add_property_row("Uppercase", uppercase)
+        self._properties_layout.addWidget(self._note_label("Keyboard markers send one recorded key only."))
 
     def _build_marker_properties(self, node: dict):
         if self._is_keybind_bound(node["id"]):

@@ -172,8 +172,11 @@ DWORD buttonUpFlag(int button) noexcept {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 bool sendButtonEvent(DWORD flags) noexcept {
 =======
+=======
+>>>>>>> main
 DWORD buttonData(int button) noexcept {
     return button == kX2Button ? XBUTTON2 : XBUTTON1;
 }
@@ -186,6 +189,9 @@ bool sendButtonEvent(DWORD flags, DWORD data = 0) noexcept {
         input.mi.mouseData = data;
         return ::SendInput(1, &input, sizeof(INPUT)) == 1;
     }
+<<<<<<< HEAD
+>>>>>>> main
+=======
 >>>>>>> main
     // Legacy mouse_event is accepted by some applications that ignore
     // SendInput-injected button messages, including some game clients.
@@ -668,7 +674,11 @@ void ClickEngine::sendClick(std::uint32_t clickCount, int offsetX, int offsetY) 
     const int button = mouseButton_.load(std::memory_order_relaxed);
     for (std::uint32_t i = 0; i < clickCount; ++i) {
 <<<<<<< HEAD
+<<<<<<< HEAD
         if (!sendButtonEvent(buttonDownFlag(button))) {
+=======
+        if (!sendButtonEvent(buttonDownFlag(button), buttonData(button))) {
+>>>>>>> main
 =======
         if (!sendButtonEvent(buttonDownFlag(button), buttonData(button))) {
 >>>>>>> main
@@ -677,7 +687,11 @@ void ClickEngine::sendClick(std::uint32_t clickCount, int offsetX, int offsetY) 
         pendingPressCallbacks_.fetch_add(1, std::memory_order_release);
         callbackCv_.notify_one();
 <<<<<<< HEAD
+<<<<<<< HEAD
         sendButtonEvent(buttonUpFlag(button));
+=======
+        sendButtonEvent(buttonUpFlag(button), buttonData(button));
+>>>>>>> main
 =======
         sendButtonEvent(buttonUpFlag(button), buttonData(button));
 >>>>>>> main

@@ -246,7 +246,11 @@ class NativeClickController(QtCore.QObject):
     _queued_release = QtCore.Signal(int, int)
     stopped = QtCore.Signal()
 
+<<<<<<< HEAD
     def __init__(self, delay_us: int, x: int, y: int, follow_mouse: bool, click_randomness: bool, hold_ms: int = 0, mouse_button: str = "left", input_type: str = "mouse", scroll_direction: str = "up", keyboard_key_name: str = "", keyboard_key_vk: int = 0, keyboard_uppercase: bool = False, enable_click_feedback: bool = True, parent=None):
+=======
+    def __init__(self, delay_us: int, x: int, y: int, follow_mouse: bool, click_randomness: bool, hold_ms: int = 0, mouse_button: str = "left", input_type: str = "mouse", scroll_direction: str = "up", scroll_time_ms: int = 100, keyboard_key_name: str = "", keyboard_key_vk: int = 0, keyboard_uppercase: bool = False, enable_click_feedback: bool = True, parent=None):
+>>>>>>> main
         super().__init__(parent)
         self._delay_us = max(1, int(delay_us))
         self._x = int(x)
@@ -255,6 +259,12 @@ class NativeClickController(QtCore.QObject):
         self._click_randomness = bool(click_randomness)
         self._hold_ms = max(0, int(hold_ms))
         self._mouse_button = (mouse_button or "left").lower()
+        self._input_type = (input_type or "mouse").lower()
+        self._scroll_direction = (scroll_direction or "up").lower()
+        self._scroll_time_ms = max(0, int(scroll_time_ms or 0))
+        self._keyboard_key_name = str(keyboard_key_name or "")
+        self._keyboard_key_vk = max(0, int(keyboard_key_vk or 0))
+        self._keyboard_uppercase = bool(keyboard_uppercase)
         self._enable_click_feedback = bool(enable_click_feedback)
         self._bridge = get_click_engine_bridge()
         self._active = False

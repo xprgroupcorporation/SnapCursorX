@@ -168,10 +168,10 @@ Current Features All Listed.
 
 Future Direction:  
 🔜 Input Recorder  
-🔜 Keyboard Input Actions  
+🔜 ~~Keyboard Input Actions~~  
 🔜 Pixel & Screen Detection  
 🔜 Multi-Setup Execution  
-🔜 Workflow Sharing  
+🔜 Workflow Sharing (Online)
 🔜 Improved Visual Editor  
 🔜 Additional Automation Modes  
 🔜 UI & Workflow Improvements  

@@ -57,6 +57,7 @@ class ConfigManager:
         "keybinds": {
             "See_Setup_Info": "CTRL+I",
 <<<<<<< HEAD
+<<<<<<< HEAD
             "Execute": "F2",
             "Stop": "F3",
             "Register_Click_Position": "F4",
@@ -67,16 +68,24 @@ class ConfigManager:
             "Save_Close_Setup": "F9",
             "Kill_Switch": "F10"
 =======
+=======
+>>>>>>> main
             "Execute": "ALT+F",
             "Stop": "ALT+F",
             "Register_Click_Position": "ALT+S",
             "Record_Input_Sandbox": "CTRL+R",
             "New_Marker_Sandbox": "CTRL+N",
+<<<<<<< HEAD
             "New_Keybind_Sandbox": "CTRL+M",
+=======
+>>>>>>> main
             "Quick_Save": "CTRL+S",
             "Recover_Window_Position": "ALT+Z",
             "Save_Close_Setup": "ALT+X",
             "Kill_Switch": "ALT+C"
+<<<<<<< HEAD
+>>>>>>> main
+=======
 >>>>>>> main
         },
         "general": {
@@ -236,10 +245,6 @@ class SettingDisplay:
         "New_Marker_Sandbox": {
             "title": "New Marker",
             "description": "Sandbox shortcut to create a new marker node.",
-        },
-        "New_Keybind_Sandbox": {
-            "title": "New Keybind",
-            "description": "Sandbox shortcut to create a new keybind node.",
         },
         "Quick_Save": {
             "title": "Quick Save",

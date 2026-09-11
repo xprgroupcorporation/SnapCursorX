@@ -65,6 +65,7 @@ MOUSE_BEHAVIOR_VALUES = {
     MOUSE_BEHAVIOR_TELEPORT,
     MOUSE_BEHAVIOR_PYTHON,
 }
+INPUT_MARKER_TYPES = ("marker", "scroll_marker", "keyboard_marker")
 
 
 def read_mouse_behavior(source, default=MOUSE_BEHAVIOR_DEFAULT):
@@ -91,7 +92,8 @@ def write_mouse_behavior(target, value):
 
 
 class SandboxDataModel:
-    VERSION = 3
+    VERSION = 5
+    FORMAT = "sandbox.v2"
 
     @staticmethod
     def _general_defaults():
@@ -109,25 +111,17 @@ class SandboxDataModel:
         drag_duration = max(0, int(gen.get("Default_Drag_Duration_MS", mouse_hold)))
         seq_delay = max(1, int(gen.get("Default_Delay_Before_Next_Target_MS", 200)))
         sandbox = {
+            "format": cls.FORMAT,
             "version": cls.VERSION,
             "selected_id": "keybind_1",
-            "root_ids": ["folder_keybind", "folder_sequence"],
+            "root_ids": ["folder_sequence"],
             "objects": {
-                "folder_keybind": {
-                    "id": "folder_keybind",
-                    "type": "folder",
-                    "name": "Keybind",
-                    "enabled": True,
-                    "children": ["keybind_1"],
-                    "parent_id": "",
-                    "folder_kind": "keybind",
-                },
                 "folder_sequence": {
                     "id": "folder_sequence",
                     "type": "folder",
                     "name": "Sequence",
                     "enabled": True,
-                    "children": ["marker_1", "dragger_1"],
+                    "children": ["keybind_1", "marker_1", "dragger_1"],
                     "parent_id": "",
                     "folder_kind": "sequence",
                     "repeat_mode": "until_stop",
@@ -139,11 +133,19 @@ class SandboxDataModel:
                     "type": "keybind",
                     "name": "Quick Marker",
                     "enabled": True,
-                    "parent_id": "folder_keybind",
+                    "parent_id": "folder_sequence",
                     "keybind": "Q",
-                    "target_id": "marker_1",
-                    "description": "Instantly click Marker A",
-                    "teleport_back": True,
+                    "target_id": "",
+                    "description": "Wait for Q before continuing",
+                    "teleport_back": False,
+                    "x": 500,
+                    "y": 400,
+                    "click_delay_ms": 200,
+                    "mouse_hold_ms": 100,
+                    "click_randomness": True,
+                    "mouse_button": "left",
+                    MOUSE_BEHAVIOR_KEY: MOUSE_BEHAVIOR_DEFAULT,
+                    "index": 10,
                 },
                 "marker_1": {
                     "id": "marker_1",
@@ -157,7 +159,7 @@ class SandboxDataModel:
                     "click_randomness": True,
                     "mouse_button": "left",
                     MOUSE_BEHAVIOR_KEY: MOUSE_BEHAVIOR_DEFAULT,
-                    "index": 0,
+                    "index": 20,
                 },
                 "dragger_1": {
                     "id": "dragger_1",
@@ -172,7 +174,7 @@ class SandboxDataModel:
                     "mouse_hold_ms": drag_duration,
                     "mouse_button": "left",
                     MOUSE_BEHAVIOR_KEY: MOUSE_BEHAVIOR_DEFAULT,
-                    "index": 10,
+                    "index": 30,
                 },
             },
         }
@@ -197,6 +199,14 @@ class SandboxDataModel:
                 "target_id": "",
                 "description": "",
                 "teleport_back": True,
+                "x": 0,
+                "y": 0,
+                "click_delay_ms": 200,
+                "mouse_hold_ms": 100,
+                "click_randomness": True,
+                "mouse_button": "left",
+                MOUSE_BEHAVIOR_KEY: MOUSE_BEHAVIOR_DEFAULT,
+                "index": 10,
             }
         if node_type == "dragger":
             node = {
@@ -218,14 +228,14 @@ class SandboxDataModel:
             return node
         node = {
             "id": node_id,
-            "type": "marker",
+            "type": node_type if node_type in INPUT_MARKER_TYPES else "marker",
             "name": name,
             "enabled": True,
             "parent_id": parent_id,
             "x": 520,
             "y": 320,
             "mouse_hold_ms": mouse_hold,
-                    "click_randomness": True,
+            "click_randomness": True,
             "mouse_button": "left",
             MOUSE_BEHAVIOR_KEY: MOUSE_BEHAVIOR_DEFAULT,
             "index": 10,
@@ -242,12 +252,12 @@ class SandboxDataModel:
             data["sandbox"] = copy.deepcopy(defaults)
             return
 
-        sandbox.setdefault("version", cls.VERSION)
-        sandbox.setdefault("root_ids", list(defaults["root_ids"]))
-        sandbox.setdefault("selected_id", defaults["selected_id"])
+        sandbox["format"] = cls.FORMAT
+        sandbox["version"] = cls.VERSION
         sandbox.setdefault("objects", {})
         objects = sandbox["objects"]
-
+        sandbox.setdefault("root_ids", list(defaults["root_ids"]))
+        sandbox.setdefault("selected_id", defaults["selected_id"])
         for node_id, node in list(objects.items()):
             if not isinstance(node, dict):
                 objects[node_id] = {"id": node_id, "type": "marker", "name": node_id}
@@ -268,7 +278,15 @@ class SandboxDataModel:
                 node.setdefault("target_id", "")
                 node.setdefault("description", "")
                 node.setdefault("teleport_back", True)
-            elif node_type == "marker":
+                node.setdefault("x", defaults["objects"]["marker_1"].get("x", 0))
+                node.setdefault("y", defaults["objects"]["marker_1"].get("y", 0))
+                normalize_timing_config(node, default_interval_ms=interval_ms_from_timing(defaults["objects"]["marker_1"]))
+                node.setdefault("mouse_hold_ms", defaults["objects"]["marker_1"]["mouse_hold_ms"])
+                write_click_randomness(node, read_click_randomness(node, True))
+                node.setdefault("mouse_button", "left")
+                write_mouse_behavior(node, read_mouse_behavior(node, defaults["objects"]["marker_1"][MOUSE_BEHAVIOR_KEY]))
+                node.setdefault("index", 10)
+            elif node_type in INPUT_MARKER_TYPES:
                 node.setdefault("x", 0)
                 node.setdefault("y", 0)
                 normalize_timing_config(node, default_interval_ms=interval_ms_from_timing(defaults["objects"]["marker_1"]))
@@ -276,6 +294,13 @@ class SandboxDataModel:
                 write_click_randomness(node, read_click_randomness(node, True))
                 node.setdefault("mouse_button", "left")
                 write_mouse_behavior(node, read_mouse_behavior(node, defaults["objects"]["marker_1"][MOUSE_BEHAVIOR_KEY]))
+                if node_type == "scroll_marker":
+                    node.setdefault("scroll_direction", "up")
+                    node.setdefault("scroll_time_ms", 100)
+                elif node_type == "keyboard_marker":
+                    node.setdefault("keyboard_key_name", "")
+                    node.setdefault("keyboard_key_vk", 0)
+                    node.setdefault("keyboard_uppercase", False)
                 node.setdefault("index", 10)
             elif node_type == "dragger":
                 node.setdefault("start_x", 0)
@@ -314,7 +339,7 @@ class SandboxDataModel:
     @classmethod
     def _sanitize_references(cls, sandbox: dict):
         objects = sandbox.get("objects", {})
-        valid_targets = {node_id for node_id, node in objects.items() if node.get("type") in ("marker", "dragger")}
+        valid_targets = {node_id for node_id, node in objects.items() if node.get("type") in INPUT_MARKER_TYPES + ("dragger",)}
         for node in objects.values():
             if node.get("type") == "keybind" and node.get("target_id") not in valid_targets:
                 node["target_id"] = ""
@@ -331,12 +356,9 @@ class SandboxDataModel:
             if node.get("type") == "keybind" and node.get("target_id")
         }
         for node_id, node in objects.items():
-            if node.get("type") not in ("marker", "dragger"):
+            if node.get("type") not in INPUT_MARKER_TYPES + ("dragger", "keybind"):
                 continue
-            if node_id in keybound_targets:
-                node["index"] = 0
-            else:
-                node["index"] = max(1, int(node.get("index", 10) or 10))
+            node["index"] = max(1, int(node.get("index", 10) or 10))
 
     @classmethod
     def sanitize_snapshot(cls, sandbox: dict):
@@ -382,6 +404,7 @@ class SandboxExecutionWorker(SharedWorkerHelper, QtCore.QThread):
         self._keybind_last_user_positions = {}
         self._keybind_spam_window_seconds = 0.18
         self._sequence_lock_depth = 0
+        self._key_waiters = {}
 
     def _all_keybind_targets(self):
         targets = {}
@@ -394,9 +417,6 @@ class SandboxExecutionWorker(SharedWorkerHelper, QtCore.QThread):
 
     def _active_keybind_targets(self):
         targets = {}
-        keybind_folder = self._node("folder_keybind")
-        if keybind_folder and not bool(keybind_folder.get("enabled", True)):
-            return targets
         for node_id, node in self.sandbox_data.get("objects", {}).items():
             if node.get("type") != "keybind":
                 continue
@@ -409,6 +429,9 @@ class SandboxExecutionWorker(SharedWorkerHelper, QtCore.QThread):
 
     def stop(self):
         self._running = False
+        self._block_user_input(False)
+        for waiter in list(getattr(self, "_key_waiters", {}).values()):
+            waiter.set()
         with self._keybind_burst_lock:
             self._keybind_bursts.clear()
             self._keybind_last_user_positions.clear()
@@ -434,12 +457,19 @@ class SandboxExecutionWorker(SharedWorkerHelper, QtCore.QThread):
     def trigger_keybind_target(self, node_id: str):
         if not self._running or not node_id:
             return
+        waiter = self._key_waiters.get(node_id)
+        if waiter is not None:
+            waiter.set()
+            return
         thread = threading.Thread(
             target=self._execute_keybind_target_async,
             args=(node_id,),
             daemon=True,
         )
         thread.start()
+
+    def signal_keybind(self, node_id: str):
+        self.trigger_keybind_target(node_id)
 
     def _node(self, node_id: str):
         return self.sandbox_data.get("objects", {}).get(node_id)
@@ -539,15 +569,17 @@ class SandboxExecutionWorker(SharedWorkerHelper, QtCore.QThread):
         if not target:
             return 140
         target_type = target.get("type")
-        if target_type == "marker":
+        if target_type in INPUT_MARKER_TYPES:
             return max(0, int(round(interval_ms_from_timing(target, 140))))
         if target_type == "dragger":
+            return max(0, int(round(interval_ms_from_timing(target, 140))))
+        if target_type == "keybind":
             return max(0, int(round(interval_ms_from_timing(target, 140))))
         if target_type == "folder" and target.get("folder_kind") == "sequence":
             children = self._sequence_candidates(target)
             if children:
                 first_child = children[0]
-                if first_child.get("type") in ("marker", "dragger"):
+                if first_child.get("type") in INPUT_MARKER_TYPES + ("dragger",):
                     return max(0, int(round(interval_ms_from_timing(first_child, 140))))
         return 140
 
@@ -556,16 +588,18 @@ class SandboxExecutionWorker(SharedWorkerHelper, QtCore.QThread):
         if not target:
             return None
         target_type = target.get("type")
-        if target_type == "marker":
+        if target_type in INPUT_MARKER_TYPES:
             return (int(target.get("x", 0)), int(target.get("y", 0)))
         if target_type == "dragger":
             return (int(target.get("end_x", 0)), int(target.get("end_y", 0)))
+        if target_type == "keybind":
+            return (int(target.get("x", 0)), int(target.get("y", 0)))
         if target_type == "folder" and target.get("folder_kind") == "sequence":
             children = self._sequence_candidates(target)
             if children:
                 first_child = children[0]
                 child_type = first_child.get("type")
-                if child_type == "marker":
+                if child_type in INPUT_MARKER_TYPES:
                     return (int(first_child.get("x", 0)), int(first_child.get("y", 0)))
                 if child_type == "dragger":
                     return (int(first_child.get("start_x", 0)), int(first_child.get("start_y", 0)))
@@ -588,6 +622,13 @@ class SandboxExecutionWorker(SharedWorkerHelper, QtCore.QThread):
         try:
             ctypes.windll.user32.ClipCursor(None)
             return True
+        except Exception:
+            return False
+
+    def _block_user_input(self, blocked: bool):
+        """Block physical mouse input only during a normal sequence action."""
+        try:
+            return bool(ctypes.windll.user32.BlockInput(ctypes.c_uint(1 if blocked else 0)))
         except Exception:
             return False
 
@@ -796,7 +837,55 @@ class SandboxExecutionWorker(SharedWorkerHelper, QtCore.QThread):
         except Exception:
             return False
 
+    def _execute_marker_input(self, node: dict):
+        node_type = str(node.get("type", "marker") or "marker").lower()
+        if node_type == "keyboard_marker":
+            vk = max(0, int(node.get("keyboard_key_vk", 0) or 0))
+            if not vk:
+                self.status_changed.emit(f"Skipped {node.get('name', 'Marker')}: no key recorded")
+                return False
+            key_up = 0x0002
+            shift_vk = 0x10
+            try:
+                self.click_started.emit(int(node.get("x", 0)), int(node.get("y", 0)))
+                if bool(node.get("keyboard_uppercase", False)):
+                    win32api.keybd_event(shift_vk, 0, 0, 0)
+                win32api.keybd_event(vk, 0, 0, 0)
+                self._sleep_until(time.perf_counter() + max(0, int(node.get("mouse_hold_ms", 100))) / 1000.0)
+                win32api.keybd_event(vk, 0, key_up, 0)
+                if bool(node.get("keyboard_uppercase", False)):
+                    win32api.keybd_event(shift_vk, 0, key_up, 0)
+                self.click_finished.emit(int(node.get("x", 0)), int(node.get("y", 0)))
+                return True
+            except Exception:
+                return False
+        if node_type == "scroll_marker":
+            direction = str(node.get("scroll_direction", "up") or "up").lower()
+            horizontal = direction in ("left", "right")
+            positive = direction in ("up", "right")
+            flag = 0x01000 if horizontal else 0x0800
+            delta = 120 if positive else -120
+            duration = max(0, int(node.get("scroll_time_ms", 100) or 0)) / 1000.0
+            deadline = time.perf_counter() + duration
+            try:
+                self.click_started.emit(int(node.get("x", 0)), int(node.get("y", 0)))
+                while self._running:
+                    ctypes.windll.user32.mouse_event(flag, 0, 0, ctypes.c_uint32(delta).value, 0)
+                    if duration <= 0 or time.perf_counter() >= deadline:
+                        break
+                    self._sleep_until(min(deadline, time.perf_counter() + 0.016))
+                self.click_finished.emit(int(node.get("x", 0)), int(node.get("y", 0)))
+                return True
+            except Exception:
+                return False
+        return None
+
     def _execute_marker(self, node: dict):
+        input_result = self._execute_marker_input(node)
+        if input_result is not None:
+            self.status_changed.emit(f"Executed {node.get('name', 'Marker')}" if input_result else f"Failed {node.get('name', 'Marker')}")
+            self._sleep_until(time.perf_counter() + max(1, int(round(interval_ms_from_timing(node, 100)))) / 1000.0)
+            return
         click_x = int(node.get("x", 0))
         click_y = int(node.get("y", 0))
         if read_click_randomness(node, True):
@@ -1010,15 +1099,12 @@ class SandboxExecutionWorker(SharedWorkerHelper, QtCore.QThread):
         self._sleep_until(time.perf_counter() + delay_time)
 
     def _sequence_candidates(self, folder_node: dict):
-        keybound_targets = set(self._all_keybind_targets())
         children = []
         for child_id in folder_node.get("children", []):
             child = self._node(child_id)
-            if not child or child.get("type") not in ("marker", "dragger"):
+            if not child or child.get("type") not in INPUT_MARKER_TYPES + ("dragger", "keybind"):
                 continue
             if not self._is_enabled(child_id):
-                continue
-            if child_id in keybound_targets:
                 continue
             children.append(child)
         children.sort(key=lambda child: (int(child.get("index", 99999)), child.get("name", "")))
@@ -1028,11 +1114,13 @@ class SandboxExecutionWorker(SharedWorkerHelper, QtCore.QThread):
         node = self._node(node_id)
         if not node or not bool(node.get("enabled", True)):
             return False
-        if node.get("type") in ("marker", "dragger"):
+        if node.get("type") in INPUT_MARKER_TYPES + ("dragger", "keybind"):
             if trigger_mode == "keybind":
+                if node.get("type") == "keybind":
+                    return self._is_keybind_path_enabled(node_id)
                 return node_id in self._active_keybind_targets() and self._is_keybind_path_enabled(node_id)
             sequence_folder = self._node("folder_sequence")
-            return bool(sequence_folder and sequence_folder.get("enabled", True) and node.get("parent_id") == "folder_sequence" and node_id not in self._all_keybind_targets())
+            return bool(sequence_folder and sequence_folder.get("enabled", True) and node.get("parent_id") == "folder_sequence")
         return self._is_enabled(node_id)
 
     def _execute_keybind_target_async(self, node_id: str):
@@ -1059,26 +1147,64 @@ class SandboxExecutionWorker(SharedWorkerHelper, QtCore.QThread):
                         self._clear_cursor_lock()
             return
         if node_type == "keybind":
-            target_id = node.get("target_id", "")
+            key_id = node.get("id", "")
+            binding = str(node.get("keybind", "")).strip()
+            if not binding:
+                return
+            if trigger_mode == "sequence":
+                # Waiting for a user key must never retain the sequence cursor lock.
+                self._clear_cursor_lock()
+                waiter = threading.Event()
+                self._key_waiters[key_id] = waiter
+                self.status_changed.emit(f"Waiting for {binding}")
+                try:
+                    while self._running and not waiter.wait(0.1):
+                        pass
+                finally:
+                    self._key_waiters.pop(key_id, None)
+                    self._clear_cursor_lock()
+                if not self._running:
+                    return
+
+            target_id = str(node.get("target_id", "")).strip()
+            action_target_id = target_id if target_id and self._node(target_id) else key_id
             burst_info = self._begin_keybind_burst(
-                node.get("id", ""),
-                target_id,
-                bool(node.get("teleport_back", False)),
+                key_id,
+                action_target_id,
+                bool(node.get("teleport_back", True)),
             )
             if burst_info:
-                restore_thread = threading.Thread(
+                threading.Thread(
                     target=self._watch_keybind_burst_restore,
                     args=(burst_info,),
                     daemon=True,
-                )
-                restore_thread.start()
-            self._execute_target(target_id, "keybind")
+                ).start()
+            if target_id and self._node(target_id):
+                self._execute_target(target_id, "keybind")
+            else:
+                action = dict(node)
+                action["type"] = "marker"
+                self._execute_marker(action)
             self._finish_keybind_burst(burst_info)
             return
-        if node_type == "marker":
-            self._execute_marker(node)
+        if node_type in INPUT_MARKER_TYPES:
+            sequence_action = trigger_mode == "sequence"
+            if sequence_action:
+                self._block_user_input(True)
+            try:
+                self._execute_marker(node)
+            finally:
+                if sequence_action:
+                    self._block_user_input(False)
         elif node_type == "dragger":
-            self._execute_dragger(node)
+            sequence_action = trigger_mode == "sequence"
+            if sequence_action:
+                self._block_user_input(True)
+            try:
+                self._execute_dragger(node)
+            finally:
+                if sequence_action:
+                    self._block_user_input(False)
 
     def run(self):
         self._running = True
@@ -1138,7 +1264,6 @@ class SandboxModeLogicMixin:
                 "Register_Click_Position": kb.get("Register_Click_Position", "F4"),
                 "See_Setup_Info": kb.get("See_Setup_Info", "CTRL+I"),
                 "New_Marker_Sandbox": kb.get("New_Marker_Sandbox", "F5"),
-                "New_Keybind_Sandbox": kb.get("New_Keybind_Sandbox", "F6"),
             },
             parent=self,
         )
@@ -1205,13 +1330,10 @@ class SandboxModeLogicMixin:
 
     def _keybind_references(self, active_only=False):
         refs = {}
-        keybind_folder = self._node("folder_keybind")
         for node_id, node in self._node_map().items():
             if node.get("type") != "keybind":
                 continue
             if active_only:
-                if keybind_folder and not bool(keybind_folder.get("enabled", True)):
-                    continue
                 if not self._is_keybind_path_enabled(node_id):
                     continue
             target_id = node.get("target_id", "")
@@ -1230,11 +1352,11 @@ class SandboxModeLogicMixin:
         seen = {}
         for child_id in sequence_folder.get("children", []):
             child = self._node(child_id)
-            if not child or child.get("type") not in ("marker", "dragger"):
+            if not child or child.get("type") not in INPUT_MARKER_TYPES + ("dragger", "keybind"):
                 continue
             if not bool(child.get("enabled", True)):
                 continue
-            if self._is_keybind_bound(child_id):
+            if child.get("type") != "keybind" and self._is_keybind_bound(child_id):
                 continue
             index = int(child.get("index", 0) or 0)
             if index <= 0:
@@ -1266,9 +1388,11 @@ class SandboxModeLogicMixin:
         nodes = []
         for child_id in sequence_folder.get("children", []):
             child = self._node(child_id)
-            if not child or child.get("type") not in ("marker", "dragger"):
+            if not child or child.get("type") not in INPUT_MARKER_TYPES + ("dragger", "keybind"):
                 continue
-            if not self._can_show_overlay_node(child_id):
+            if child.get("type") != "keybind" and self._is_keybind_bound(child_id):
+                continue
+            if child.get("type") != "keybind" and not self._can_show_overlay_node(child_id):
                 continue
             nodes.append(child)
         nodes.sort(key=lambda child: (int(child.get("index", 99999)), child.get("name", "")))
@@ -1523,7 +1647,7 @@ class SandboxModeLogicMixin:
             return self._folder_icon
         if node_type == "keybind":
             return self._keybind_icon
-        if node_type == "marker":
+        if node_type in INPUT_MARKER_TYPES:
             return self._marker_icon
         if node_type == "dragger":
             return self._dragger_icon
@@ -1559,10 +1683,8 @@ class SandboxModeLogicMixin:
             return f"{prefix}{len(node.get('children', []))} item(s)"
         if node_type == "keybind":
             key_name = node.get("keybind", "").strip() or "No key"
-            target = self._node(node.get("target_id", ""))
-            target_text = target.get("name", "No target") if target else "No target"
-            return f"{prefix}{key_name} → {target_text}"
-        if node_type == "marker":
+            return f"{prefix}{key_name} • index {int(node.get('index', 1) or 1)}"
+        if node_type in INPUT_MARKER_TYPES:
             return f"{prefix}({node.get('x', 0)}, {node.get('y', 0)})"
         if node_type == "dragger":
             return f"{prefix}({node.get('start_x', 0)}, {node.get('start_y', 0)}) → ({node.get('end_x', 0)}, {node.get('end_y', 0)})"
@@ -1573,7 +1695,11 @@ class SandboxModeLogicMixin:
             f"Execute ({keybinds.get('Execute', 'F2')}) • Stop ({keybinds.get('Stop', 'F3')}) • "
             f"Set Pos. ({keybinds.get('Register_Click_Position', 'F4')}) • "
             f"Info ({keybinds.get('See_Setup_Info', 'CTRL+I')}) • +Marker ({keybinds.get('New_Marker_Sandbox', 'F5')}) •\n"
+<<<<<<< HEAD
             f"+Keybind ({keybinds.get('New_Keybind_Sandbox', 'F6')}) • Save ({keybinds.get('Quick_Save', 'F7')}) • "
+=======
+            f"Save ({keybinds.get('Quick_Save', 'F7')}) • "
+>>>>>>> main
             f"Toggle Minimize ({keybinds.get('Recover_Window_Position', 'F8')}) • S&Close ({keybinds.get('Save_Close_Setup', 'F9')}) • "
             f"Kill ({keybinds.get('Kill_Switch', 'F10')})"
         )
@@ -1719,8 +1845,13 @@ class SandboxModeLogicMixin:
         self._set_selected_node(node_id, point_key=point_key)
 
     def _folder_allowed_types(self, folder_node: dict):
-        kind = folder_node.get("folder_kind", "sequence")
-        return ["keybind"] if kind == "keybind" else ["marker", "dragger"]
+        return [
+            ("Mouse Marker", "marker"),
+            ("Scroll Wheel Marker", "scroll_marker"),
+            ("Keyboard Marker", "keyboard_marker"),
+            ("Dragger", "dragger"),
+            ("Keybind", "keybind"),
+        ] if folder_node.get("folder_kind", "sequence") == "sequence" else []
 
     def _on_tree_selection_changed(self):
         selected_ids = []
@@ -1739,7 +1870,7 @@ class SandboxModeLogicMixin:
         for node_id, node in self._node_map().items():
             if node_id == current_id:
                 continue
-            if node.get("type") in ("marker", "dragger"):
+            if node.get("type") in INPUT_MARKER_TYPES + ("dragger",):
                 options.append((node_id, f"{node.get('name', node_id)} [{node.get('type').title()}]"))
         return options
 
@@ -1904,6 +2035,16 @@ class SandboxModeLogicMixin:
             self._set_node_value(node_id, "keybind", binding)
             return
 
+    def _capture_sandbox_marker_key(self, node_id: str):
+        node = self._node(node_id)
+        if not node:
+            return
+        dialog = _keybind_capture_dialog_type()(node.get("keyboard_key_name", ""), self)
+        if dialog.exec() == QtWidgets.QDialog.Accepted and dialog.binding_text().strip():
+            self._set_node_value(node_id, "keyboard_key_name", dialog.binding_text().strip().lower())
+            self._set_node_value(node_id, "keyboard_key_vk", int(getattr(dialog, "captured_vk", 0) or 0))
+            self._refresh_properties()
+
     def _selected_node_name(self):
         node = self._node(self.data["sandbox"].get("selected_id", ""))
         return node.get("name", "N/A") if node else "N/A"
@@ -1912,7 +2053,8 @@ class SandboxModeLogicMixin:
         folder = self._node(folder_id)
         if not folder or folder.get("type") != "folder":
             return
-        if node_type not in self._folder_allowed_types(folder):
+        allowed = [entry[1] if isinstance(entry, (tuple, list)) else entry for entry in self._folder_allowed_types(folder)]
+        if node_type not in allowed:
             return
         target_options = [(text, target_id) for target_id, text in self._sandbox_target_options("")]
         dialog = SandboxCreateObjectDialog([node_type], target_options=target_options, parent=self)
@@ -1923,22 +2065,23 @@ class SandboxModeLogicMixin:
 
     def _create_node(self, parent_id: str, node_type: str, name: str, extra=None):
         objects = self._node_map()
-        prefix = "marker" if node_type == "marker" else "dragger" if node_type == "dragger" else "keybind"
+        extra = dict(extra or {})
+        prefix = "marker" if node_type in INPUT_MARKER_TYPES else "dragger" if node_type == "dragger" else "keybind"
         node_id = SandboxDataModel.next_id(objects, prefix)
         node = SandboxDataModel._default_node(node_type, node_id, name, parent_id)
-        for key, value in (extra or {}).items():
+        for key, value in extra.items():
             if key in node:
                 node[key] = value
-        if node_type in ("marker", "dragger"):
+        if node_type in INPUT_MARKER_TYPES + ("dragger", "keybind"):
             siblings = [
                 self._node(child_id) for child_id in self._node(parent_id).get("children", [])
-                if self._node(child_id) and self._node(child_id).get("type") in ("marker", "dragger") and not self._is_keybind_bound(child_id)
+                if self._node(child_id) and self._node(child_id).get("type") in INPUT_MARKER_TYPES + ("dragger", "keybind")
             ]
             next_index = ((max([int(s.get("index", 0)) for s in siblings], default=0) // 10) + 1) * 10
             node["index"] = max(10, next_index)
-        if node_type in ("marker", "dragger") and not extra:
+        if node_type in INPUT_MARKER_TYPES + ("dragger",) and not extra:
             x, y = win32api.GetCursorPos()
-            if node_type == "marker":
+            if node_type in INPUT_MARKER_TYPES:
                 node["x"], node["y"] = int(x), int(y)
             else:
                 node["start_x"], node["start_y"] = int(x), int(y)
@@ -1961,10 +2104,10 @@ class SandboxModeLogicMixin:
             return
         clone_id = SandboxDataModel.next_id(self._node_map(), node.get("type", "object"))
         cloned = SandboxDataModel.clone_node(node, clone_id, parent_id)
-        if cloned.get("type") in ("marker", "dragger") and not self._is_keybind_bound(node_id):
+        if cloned.get("type") in INPUT_MARKER_TYPES + ("dragger", "keybind"):
             siblings = [
                 self._node(child_id) for child_id in self._node(parent_id).get("children", [])
-                if self._node(child_id) and self._node(child_id).get("type") in ("marker", "dragger") and not self._is_keybind_bound(child_id)
+                if self._node(child_id) and self._node(child_id).get("type") in INPUT_MARKER_TYPES + ("dragger", "keybind")
             ]
             next_index = ((max([int(s.get("index", 0)) for s in siblings], default=0) // 10) + 1) * 10
             cloned["index"] = max(10, next_index)
@@ -2013,8 +2156,7 @@ class SandboxModeLogicMixin:
             if not self._is_effectively_enabled(node_id):
                 continue
             binding = node.get("keybind", "").strip()
-            target_id = node.get("target_id", "")
-            if binding and target_id and self._node(target_id):
+            if binding and node.get("parent_id") == "folder_sequence":
                 keybinds[node_id] = binding
         return keybinds
 
@@ -2041,7 +2183,9 @@ class SandboxModeLogicMixin:
             self._set_shared_execution_indicator("")
 
     def _default_execute_target(self):
-        if self._sequence_execute_nodes():
+        sequence_nodes = self._sequence_execute_nodes()
+        # Keybind-only setups are listener-driven and must remain freely triggerable.
+        if any(node.get("type") != "keybind" for node in sequence_nodes):
             return "folder_sequence"
         return ""
 
@@ -2067,10 +2211,10 @@ class SandboxModeLogicMixin:
 
     def _execution_index_label_for_node(self, node_id: str):
         node = self._node(node_id)
-        if not node or node.get("type") not in ("marker", "dragger"):
+        if not node or node.get("type") not in INPUT_MARKER_TYPES + ("dragger", "keybind"):
             return ""
-        if self._is_keybind_bound(node_id):
-            return "0"
+        if node.get("type") == "keybind":
+            return str(int(node.get("index", 1) or 1))
         for display_order, child in enumerate(self._sequence_execute_nodes(), start=1):
             if child.get("id", "") == node_id:
                 return str(display_order)
@@ -2320,7 +2464,7 @@ class SandboxModeLogicMixin:
         if self._worker and node_id in self._node_map():
             self._set_status(f"Triggered {self._node(node_id).get('name', node_id)}")
             self._current_indicator_node_id = node_id or ""
-            self._worker.trigger_keybind_target(node_id)
+            self._worker.signal_keybind(node_id)
 
     def _on_worker_target_completed(self, node_id: str):
         if not self._executing or node_id != "folder_sequence":
@@ -2369,9 +2513,6 @@ class SandboxModeLogicMixin:
         elif action == "New_Marker_Sandbox":
             self._play_system_sound("SystemQuestion", 760)
             self._open_create_object_dialog("folder_sequence")
-        elif action == "New_Keybind_Sandbox":
-            self._play_system_sound("SystemQuestion", 760)
-            self._quick_create_sandbox_object("folder_keybind", "keybind")
 
     def _teardown_sandbox_overlay(self):
         if hasattr(self, "_overlay_refresh_timer") and self._overlay_refresh_timer:

@@ -133,8 +133,13 @@ class SingleModeLogicMixin:
         self._pending_stop_message = None
         self._last_failsafe_trigger_edge = ""
         self._pointer_lock_active = False
+        self._pointer_lock_target = None
 
         super().__init__(file_path, pos, title="Single Mode", parent=parent)
+
+        self._pointer_lock_timer = QtCore.QTimer(self)
+        self._pointer_lock_timer.setInterval(25)
+        self._pointer_lock_timer.timeout.connect(self._refresh_pointer_cursor_lock)
 
         # Resize to fit full UI after base sets 280×80
         center = self.geometry().center()
@@ -290,6 +295,8 @@ class SingleModeLogicMixin:
         )
 
     def _clear_pointer_cursor_lock(self):
+        self._pointer_lock_timer.stop()
+        self._pointer_lock_target = None
         if not self._pointer_lock_active:
             return
         try:
@@ -299,11 +306,18 @@ class SingleModeLogicMixin:
         self._pointer_lock_active = False
 
     def _apply_pointer_cursor_lock(self, x: int, y: int):
+        self._pointer_lock_target = (int(x), int(y))
         try:
-            rect = wintypes.RECT(int(x), int(y), int(x) + 1, int(y) + 1)
+            rect = wintypes.RECT(int(x), int(y), int(x) + 2, int(y) + 2)
             self._pointer_lock_active = bool(ctypes.windll.user32.ClipCursor(ctypes.byref(rect)))
         except Exception:
             self._pointer_lock_active = False
+
+    def _refresh_pointer_cursor_lock(self):
+        if not self._executing or not self._pointer_lock_target:
+            self._pointer_lock_timer.stop()
+            return
+        self._apply_pointer_cursor_lock(*self._pointer_lock_target)
 
     def _sanitize_failsafe(self, failsafe: dict | None):
         width, height = self._primary_screen_size()
@@ -682,7 +696,12 @@ class SingleModeLogicMixin:
         self._on_settings_changed()
 
     def _follow_visual_updates_enabled(self):
+<<<<<<< HEAD
         if str(self.data.get("settings", {}).get("input_type", "mouse") or "mouse").lower() == "scroll":
+=======
+        input_type = str(self.data.get("settings", {}).get("input_type", "mouse") or "mouse").lower()
+        if input_type in ("scroll", "keyboard"):
+>>>>>>> main
             return True
         if not self._click_target_is_follow():
             return False
@@ -895,7 +914,11 @@ class SingleModeLogicMixin:
                 overlay.update_hit_region()
             if overlay:
                 overlay.hide_position_indicator()
+<<<<<<< HEAD
         elif overlay and input_type == "mouse":
+=======
+        elif overlay and input_type in ("mouse", "keyboard"):
+>>>>>>> main
             overlay.set_marker_execution_mode(
                 True,
                 keep_visible=True,
@@ -1029,6 +1052,7 @@ class SingleModeLogicMixin:
                 else:
                     self._worker.click_finished.connect(self._on_worker_click_count)
                 self._apply_pointer_cursor_lock(int(pos.get("x", 0)), int(pos.get("y", 0)))
+                self._pointer_lock_timer.start()
             else:
                 bridge = get_click_engine_bridge()
                 if bridge.available:

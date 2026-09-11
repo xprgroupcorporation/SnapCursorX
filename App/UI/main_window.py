@@ -364,7 +364,11 @@ class KeybindCaptureDialog(QtWidgets.QDialog):
     _capture_active = False
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     def __init__(self, current_binding="", parent=None):
+=======
+    def __init__(self, current_binding="", parent=None, single_key_only=False):
+>>>>>>> main
 =======
     def __init__(self, current_binding="", parent=None, single_key_only=False):
 >>>>>>> main
@@ -1043,6 +1047,7 @@ class ControlPanel(QtWidgets.QMainWindow):
         self._update_check_started = False
         if self.isVisible():
             QtCore.QTimer.singleShot(0, self._start_update_check)
+<<<<<<< HEAD
 
     def _handle_titlebar_close(self):
         """Close the current panel or return to the setup context."""
@@ -1053,6 +1058,8 @@ class ControlPanel(QtWidgets.QMainWindow):
             self.show_home()
             return
         self.close_all()
+=======
+>>>>>>> main
 
     def _set_panel_size(self, width: int, height: int):
         self.setMinimumSize(width, height)
@@ -1364,7 +1371,6 @@ class ControlPanel(QtWidgets.QMainWindow):
                     "Register_Click_Position": new_kb.get("Register_Click_Position", "ALT+S"),
                     "See_Setup_Info": new_kb.get("See_Setup_Info", "CTRL+I"),
                     "New_Marker_Sandbox": new_kb.get("New_Marker_Sandbox", "CTRL+N"),
-                    "New_Keybind_Sandbox": new_kb.get("New_Keybind_Sandbox", "CTRL+M"),
                 }
                 w._setup_keybind_listener.update_keybinds(setup_relevant)
                 if hasattr(w, "_refresh_bottom_bar"):
@@ -2290,6 +2296,12 @@ class ControlPanel(QtWidgets.QMainWindow):
         if self._update_check_thread is not None:
             return
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        if not self._update_checks_enabled():
+            self._set_updates_disabled_state()
+            return
+>>>>>>> main
 =======
         if not self._update_checks_enabled():
             self._set_updates_disabled_state()
@@ -2375,6 +2387,12 @@ class ControlPanel(QtWidgets.QMainWindow):
         if request_id != self._update_check_request_id:
             return
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        if not self._update_checks_enabled():
+            self._set_updates_disabled_state()
+            return
+>>>>>>> main
 =======
         if not self._update_checks_enabled():
             self._set_updates_disabled_state()
